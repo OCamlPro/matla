@@ -45,6 +45,7 @@ jobs:
           mkdir -p target/pages
           mv target/docs/manual/html target/pages/manual
           cp README.md target/pages/index.md
+          echo "theme: jekyll-theme-midnight" > target/pages/_config.yml
 
       - name: Deploy 🚀
         uses: JamesIves/github-pages-deploy-action@v4.3.3
