@@ -1,0 +1,44 @@
+# Based on
+# - https://github.com/JamesIves/github-pages-deploy-action
+# with a little bit of
+# - https://github.com/jontze/action-mdbook
+
+name: Deploy Pages
+on:
+  release:
+    types: [created]
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup mdBook
+        uses: jontze/action-mdbook@v1
+        with:
+          use-linkcheck: true
+      - name: Show mdbook version
+        run: mdbook --version
+      - name: Show linkchecker version
+        run: mdbook-linkcheck --version
+
+      - name: Checkout 🛎️
+        uses: actions/checkout@v3
+        with:
+          ref: 'latest'
+
+      - name: Test User Manual 🔧
+        run: |
+          mdbook test
+
+      - name: Build User Manual 🔧
+        run: |
+          mdbook build -d ../../target/docs/manual docs/manual
+
+      - name: Deploy 🚀
+        uses: JamesIves/github-pages-deploy-action@v4.3.3
+        with:
+          branch: gh-pages
+          folder: targets/docs/manual/html

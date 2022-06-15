@@ -1,0 +1,40 @@
+name: Testing
+
+on:
+  pull_request:
+    branches: main
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        platform: [ubuntu-latest, macos-latest, windows-latest]
+        # platform: [ubuntu-latest, macos-latest, windows-latest]
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Java version
+      run: java -version
+    - name: Doc
+      run: cargo doc --verbose
+    - name: Debug Build
+      run: cargo build --verbose
+    - name: Release Build
+      run: cargo build --verbose --release
+    - name: Setup
+      run: cargo run -p matla -- setup -o --standalone
+    - name: Run Tests
+      # So tired of solving dumb windows problem, giving up.
+      run: |
+        if [ "$RUNNER_OS" == "Windows" ]; then
+          echo "only running code-tests on windows"
+          make test_code
+        else
+          make test
+        fi
+      shell: bash

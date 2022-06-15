@@ -1,0 +1,7 @@
+> matla run top
+# 20
+Error: on file `./top.cfg`
+- The `.cfg` file provided does not specify an initial state predicate.
+  Modules imported with a parameterized `INSTANCE` statement can also cause this error.
+- TLC-level error: [cfg] config missing init
+specification is ill-defined

@@ -1,0 +1,15 @@
+[project]
+# # Full configuration for TLC runtime arguments customization, all values shown are the default ones.
+#
+# # Sets the number of workers, `0` or `auto` for `auto`.
+# workers = 'auto' # <int|'auto'>#
+# # If true, counterexample traces will only display state variables when they change.
+# diff_cexs = 'on' # <'on'|'off'|'true'|'false'>#
+# # Sets the seed when running TLC, random if none.
+# seed = 0 # <int|'random'>#
+# # If true, TLC will not output print statements.
+# terse = 'off' # <'on'|'off'|'true'|'false'>#
+# # Maximum size of the sets TLC is allowed to enumerate.
+# max_set_size = 'default' # <u64|'default'>#
+# # If true, TLC will check for (and fail on) deadlocks.
+# check_deadlocks = 'on' # <'on'|'off'|'true'|'false'>

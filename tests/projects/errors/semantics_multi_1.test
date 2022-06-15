@@ -1,0 +1,39 @@
+> matla run top
+# 20
+Error: multiple problems occurred during semantic processing
+- on file `./top.tla` (top, 10:21 → 10:24)
+  - Unknown operator: `Bool'.
+        |                     vvvv~~~~~ here
+     10 | is_bool(b) == b \in Bool
+        |
+- on file `./top.tla` (top, 16:15 → 16:24)
+  - Unknown operator: `checks_and'.
+        |               vvvvvvvvvv~~~~~ here
+     16 |     Matla!dbg!checks_and(
+        |
+- on file `./top.tla` (top, 33:26 → 33:30)
+  - Unknown operator: `false'.
+        |                          vvvvv~~~~~ here
+     33 |     LET s0 == sys_new(0, false) IN
+        |
+- on file `./top.tla` (top, 34:15 → 34:23)
+  - Unknown operator: `check_and'.
+        |               vvvvvvvvv~~~~~ here
+     34 |     Matla!dbg!check_and(
+        |
+- on file `./top.tla` (top, 45:18 → 45:19)
+  - Unknown operator: `s0'.
+        |              vv~~~~~ here
+     45 |     /\ sys = s0
+        |
+- on file `./top.tla` (top, 52:18 → 52:23)
+  - Unknown operator: `assert'.
+        |                  vvvvvv~~~~~ here
+     52 |     /\ Matla!dbg!assert(
+        |
+- on file `./top.tla` (top, 65:33 → 65:35)
+  - Unknown operator: `cnt'.
+        |                                 vvv~~~~~ here
+     65 |             ELSE IF counting /\ cnt < 59
+        |
+specification is ill-defined

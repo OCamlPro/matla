@@ -1,0 +1,23 @@
+> matla run
+# 10
+Some temporal property(ies) do not hold.
+Counterexample:
+  ┌───┐
+  │ 0 │ initial state
+  └─┬─┘
+    │ cnt       : 0
+    │ counting  : false
+    │ reset     : false
+    │ start_stop: false
+  ┌─▼─┐
+  │ 1 │ next   @ sw_0.tla:18:5
+  └─┬─┘
+    │ cnt       : 1
+    │ counting  : true
+    │ start_stop: true
+  ┌─▼─┐
+┌─► 2 │ next   @ sw_0.tla:18:5
+│ └─┬─┘
+│   │ counting: false
+└───┘
+specification is unsafe

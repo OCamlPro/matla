@@ -1,0 +1,22 @@
+> matla run top
+# 20
+Error: parse error on file `./top.tla`
+- expected Expression or Instance, encountered `Beginning of definition` and `==`
+  ./top.tla at 2:9
+        |
+      2 | spec == TRUE
+        |         ^~~~~~ here
+- while parsing
+  ./top.tla at 2:1
+        |
+      2 | spec == TRUE
+        | ^~~~~~ definition start
+  ./top.tla at 2:1
+        |
+      2 | spec == TRUE
+        | ^~~~~~ module body start
+  ./top.tla at 1:1
+        |
+      1 | ---- MODULE top ----
+        | ^~~~~~ module definition start
+specification is ill-defined

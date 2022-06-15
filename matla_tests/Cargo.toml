@@ -1,0 +1,16 @@
+[package]
+name = "matla_tests"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+base = { path = "../base" }
+conf = { path = "../conf" }
+project = { path = "../project" }
+
+atty = "0.2"
+diff = "^0.1"
+tempfile = "^3.2"
+duct = "^0.13"

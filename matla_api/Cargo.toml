@@ -1,0 +1,26 @@
+[package]
+name = "matla_api"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+default = [
+	"with_clap",
+]
+
+with_clap = [
+	"clap",
+	"atty",
+]
+
+[dependencies]
+base = { path = "../base" }
+conf = { path = "../conf" }
+cex = { path = "../cex" }
+project = { path = "../project" }
+testing = { path = "../testing" }
+
+atty = { version = "^0.2", optional = true }
+clap = { version = "^3.1", optional = true, features = ["cargo"] }

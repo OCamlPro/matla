@@ -1,0 +1,15 @@
+[package]
+name = "matla"
+version = "0.1.0"
+edition = "2021"
+description = "A project manager for TLA+ projects."
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+matla_api = { path = "../matla_api", features = ["with_clap"] }
+
+[dependencies.simple_logger]
+version = "^2.1"
+default-features = false
+features = ["colors"]

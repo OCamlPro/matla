@@ -1,0 +1,15 @@
+[workspace]
+members = [
+    "base",
+    "conf",
+    "project",
+    "cex",
+    "testing",
+    "matla_api",
+    "matla",
+
+    "matla_tests",
+]
+default-members = [
+    "matla",
+]

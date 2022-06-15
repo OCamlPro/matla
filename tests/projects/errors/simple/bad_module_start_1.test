@@ -1,0 +1,18 @@
+> matla run top
+# 20
+Error: parse error on file `./top.tla`
+- expected Identifier, encountered `----` and `---- MODULE`
+  ./top.tla at 1:13
+        |
+      1 | ---- MODULE ----
+        |             ^~~~~~ here
+- while parsing
+  ./top.tla at 1:1
+        |
+      1 | ---- MODULE ----
+        | ^~~~~~ module header start
+  ./top.tla at 1:1
+        |
+      1 | ---- MODULE ----
+        | ^~~~~~ module definition start
+specification is ill-defined

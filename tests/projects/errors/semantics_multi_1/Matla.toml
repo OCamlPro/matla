@@ -1,0 +1,19 @@
+[project]
+# # Full configuration for TLC runtime arguments customization
+#
+# # Sets the number of workers, `0` or `auto` for `auto`.
+# workers = 0 # <int|'auto'>#
+# # If active, counterexample traces will only display state variables when they change.
+# diff_cexs = 'on' # <'on'|'off'|'true'|'false'>#
+# # Sets the seed when running TLC, random if none.
+# seed = 0 # <int|'random'>#
+# # If active, TLC will not output print statements.
+# terse = 'off' # <'on'|'off'|'true'|'false'>#
+# # Maximum size of the sets TLC is allowed to enumerate.
+# max_set_size = 'default' # <u64|'default'>#
+# # If active, TLC will check for (and fail on) deadlocks.
+# check_deadlocks = 'on' # <'on'|'off'|'true'|'false'>#
+# # If active, matla will present the callstack on errors, whenever possible.
+# print_callstack = 'off' # <'on'|'off'|'true'|'false'>#
+# # If active, matla will present time statistics during runs.
+# timestats = 'off' # <'on'|'off'|'true'|'false'>

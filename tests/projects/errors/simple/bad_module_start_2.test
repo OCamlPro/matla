@@ -1,0 +1,6 @@
+> matla run top
+# 20
+Error: on file `./top.tla`
+- In `top.tla`: unexpected top-most header module name `no_top`;
+  top-most module header must have the file's basename (`top`, here) as the module's name
+specification is ill-defined

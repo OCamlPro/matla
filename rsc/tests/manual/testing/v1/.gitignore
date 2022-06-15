@@ -1,0 +1,5 @@
+# Ignore macos trash files
+.DS_Store
+
+# Ignore matla build directory.
+/target

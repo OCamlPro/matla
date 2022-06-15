@@ -1,0 +1,29 @@
+[package]
+name = "base"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+atty = "0.2"
+ansi_term = "^0.12"
+anyhow = "^1.0"
+chrono = { version = "^0.4", features = ["unstable-locales"] }
+either = "^1.6"
+implem = { git = "https://github.com/AdrienChampion/implem" }
+indenter = "^0.3"
+lazy_static = "^1.4"
+log = "^0.4"
+num = "^0.4"
+peg = "^0.8"
+rayon = "^1.5"
+readonly = "^0.2"
+regex = "^1.5"
+safe_index = "^0.9.17"
+smallvec = "^1.8"
+walkdir = "^2.3"
+
+[dependencies.reqwest]
+version = "^0.11"
+features = ["blocking"]

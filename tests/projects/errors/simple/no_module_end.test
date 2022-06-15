@@ -1,0 +1,14 @@
+> matla run top
+# 20
+Error: parse error on file `./top.tla`
+- expected ==== or more Module body, encountered `<EOF>` and `TRUE`
+  ./top.tla at 2:13
+        |
+      2 | spec == TRUE
+        |             ^~~~~~ here
+- while parsing
+  ./top.tla at 1:1
+        |
+      1 | ---- MODULE top ----
+        | ^~~~~~ module definition start
+specification is ill-defined

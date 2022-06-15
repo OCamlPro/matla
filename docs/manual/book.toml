@@ -1,0 +1,24 @@
+[book]
+authors = ["Adrien Champion"]
+language = "en"
+multilingual = false
+src = "src"
+title = "Matla User Manual"
+
+[output.html]
+
+[output.linkcheck]
+follow-web-links = true
+exclude = [
+	# linkcheck seems to struggle with these for some reason
+	'../app_tla',
+	'../setup',
+	'../testing',
+	'../project',
+	'crates\.io',
+	# TODO remove this once the repo is up and public
+	'https://github\.com/OCamlPro/matla/releases',
+]
+
+[output.linkcheck.http-headers]
+'crates\.io' = ["Accept: text/html"]

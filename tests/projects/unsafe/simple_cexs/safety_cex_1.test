@@ -1,0 +1,63 @@
+> matla run -w 1 top
+# 10
+Invariant pos_leq_10 does not hold.
+Counterexample:
+  ┌────┐
+  │  0 │ initial state
+  └─┬──┘
+    │ cnt       : 0
+    │ counting  : false
+    │ reset     : false
+    │ start_stop: false
+  ┌─▼──┐
+  │  1 │ next   @ top.tla:18:9
+  └─┬──┘
+    │ cnt       : 1
+    │ counting  : true
+    │ start_stop: true
+  ┌─▼──┐
+  │  2 │ next   @ top.tla:18:9
+  └─┬──┘
+    │ cnt       : 2
+    │ start_stop: false
+  ┌─▼──┐
+  │  3 │ next   @ top.tla:18:9
+  └─┬──┘
+    │ cnt: 3
+  ┌─▼──┐
+  │  4 │ next   @ top.tla:18:9
+  └─┬──┘
+    │ cnt: 4
+  ┌─▼──┐
+  │  5 │ next   @ top.tla:18:9
+  └─┬──┘
+    │ cnt: 5
+  ┌─▼──┐
+  │  6 │ next   @ top.tla:18:9
+  └─┬──┘
+    │ cnt: 6
+  ┌─▼──┐
+  │  7 │ next   @ top.tla:18:9
+  └─┬──┘
+    │ cnt: 7
+  ┌─▼──┐
+  │  8 │ next   @ top.tla:18:9
+  └─┬──┘
+    │ cnt: 8
+  ┌─▼──┐
+  │  9 │ next   @ top.tla:18:9
+  └─┬──┘
+    │ cnt: 9
+  ┌─▼──┐
+  │ 10 │ next   @ top.tla:18:9
+  └─┬──┘
+    │ cnt: 10
+  ┌─▼──┐
+  │ 11 │ next   @ top.tla:18:9
+  └─┬──┘
+    │ cnt       : 11
+    │ counting  : true
+    │ reset     : false
+    │ start_stop: false
+    ┴
+specification is unsafe

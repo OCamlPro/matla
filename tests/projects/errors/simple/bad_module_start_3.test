@@ -1,0 +1,18 @@
+> matla run top
+# 20
+Error: parse error on file `./top.tla`
+- expected ----, encountered `--` and `top`
+  ./top.tla at 1:17
+        |
+      1 | ---- MODULE top ---
+        |                 ^~~~~~ here
+- while parsing
+  ./top.tla at 1:1
+        |
+      1 | ---- MODULE top ---
+        | ^~~~~~ module header start
+  ./top.tla at 1:1
+        |
+      1 | ---- MODULE top ---
+        | ^~~~~~ module definition start
+specification is ill-defined

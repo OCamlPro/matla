@@ -1,0 +1,3 @@
+[project]
+seed = 0
+workers = 1

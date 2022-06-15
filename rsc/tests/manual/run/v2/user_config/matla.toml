@@ -1,0 +1,6 @@
+[config]
+tla2tools = '~/.config/matla/tla2tools.jar'
+
+[tlc_cla]
+seed = 'random'
+diff_cexs = 'off'

@@ -1,0 +1,19 @@
+> matla run top
+# 20
+Error: In computing next states, TLC expected a boolean expression,
+but instead found 7.
+7
+
+- triggered at
+  module top, 9:5 → 9:11
+        |     vvvvvvv
+      9 |     b' = ~b
+        |
+
+- while exploring this trace
+  ┌───┐
+  │ 0 │ initial state
+  └─┬─┘
+    │ b: true
+    ┴
+specification is ill-defined

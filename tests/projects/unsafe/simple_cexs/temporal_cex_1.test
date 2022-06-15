@@ -1,0 +1,13 @@
+> matla run top
+# 10
+Some temporal property(ies) do not hold.
+Counterexample:
+  ┌───┐
+┌─► 0 │ initial state
+│ └─┬─┘
+│   │ cnt       : 0
+│   │ counting  : false
+│   │ reset     : false
+│   │ start_stop: false
+└───┘
+specification is unsafe

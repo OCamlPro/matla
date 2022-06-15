@@ -1,0 +1,6 @@
+> matla test "encoding_*"
+# 0
+running 2 integration tests sequentially
+    test `/encoding_2`: success 😺
+    test `/encoding_1`: success 😺
+integration tests: 2 successful of 2

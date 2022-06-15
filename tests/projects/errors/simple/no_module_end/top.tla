@@ -1,0 +1,2 @@
+---- MODULE top ----
+spec == TRUE

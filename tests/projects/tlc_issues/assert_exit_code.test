@@ -1,0 +1,18 @@
+> matla run top
+# 10
+Error: an assertion failed with "b1 is not TRUE"
+
+- triggered at
+  module top, 7:22 → 7:38
+        |                      vvvvvvvvvvvvvvvvv
+      7 | assert(pred, msg) == Assert(pred, msg)
+        |
+
+- while exploring this trace
+  ┌───┐
+  │ 0 │ initial state
+  └─┬─┘
+    │ b1: false
+    │ b2: true
+    ┴
+specification is unsafe

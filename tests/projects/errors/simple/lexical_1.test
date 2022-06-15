@@ -1,0 +1,40 @@
+> matla run top
+# 20
+Error: lexical error on file `./top.tla` (49:24)
+- warning: TLC's lexical errors are more art than science
+  don't trust the error position too much
+- encountered `\n`
+        |                            v~~~~~ while TLC was parsing this
+     19 |             <<is_nat(cnt), "`cnt` should have type `Nat`">>,
+     20 |             <<is_bool(counting), "`counting` should have type `Bool`">>
+     21 |         >>,
+     22 |         \* value to yield if all checks where successful
+     23 |         [ cnt |-> cnt, counting |-> counting ]
+     24 |     )
+     25 | 
+     26 | \* Type-checking for systems.
+     27 | is_sys(s) ==
+     28 |     DOMAIN s = { "cnt", "counting" }
+     29 |     /\ is_nat(s.cnt)
+     30 |     /\ is_bool(s.counting)
+     31 | 
+     32 | init_sys ==
+     33 |     LET s0 == sys_new(0, false) IN
+     34 |     Matla!dbg!is_and(
+     35 |         is_sys(s),
+     36 |         "error on initial system value",
+     37 |         s0
+     38 |     )
+     39 | 
+     40 | init ==
+     41 |     \* inputs, must be booleans (this is not type-checking)
+     42 |     is_bool(reset)
+     43 |     /\ is_bool(start_stop)
+     44 |     \* initial system value
+     45 |     /\ sys = s0
+     46 | 
+     47 | next ==
+     48 |     \* inputs, must be booleans (this is not type-checking)
+     49 |     is_bool(reset')
+        |                    ^~~~~~ error reported here
+specification is ill-defined
