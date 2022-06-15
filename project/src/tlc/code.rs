@@ -879,7 +879,7 @@ It seems you just triggered an error for which we do have a handler yet. We woul
 if you could take a few minutes to report this as an issue on our github. First, open this link to
 check if this error has already been reported:
 
-    https://github.com/AdrienChampion/matla/issues?q=is%3Aissue+is%3Aopen+report+on+{err}
+    https://github.com/OCamlPro/matla/issues?q=is%3Aissue+is%3Aopen+report+on+{err}
 
 If this search returns a result, consider adding a `+1` or something to let us know how to
 prioritize error kinds. If the search returns nothing, you can use the following link to create an

@@ -2,7 +2,9 @@
 
 A manager for TLA+ projects.
 
-Features
+Read the user manual [here][user manual].
+
+## Features
 
 - [x] does not require the TLA+ toolbox to be installed;
 - [x] can use the toolbox from your environment;
@@ -35,21 +37,21 @@ Non-features
 
 Matla is not on [crates.io], you can still install it with `cargo` which you get when [installing rust].
 
+Install from git (**not recommended** as long as the repo is private):
+
+```text
+> cargo install --git https://github.com/OCamlPro/matla#latest
+...
+```
+
 Install from local clone (**recommended** as long as the repo is private):
 
 ```text
-> git clone https://github.com/AdrienChampion/matla
+> git clone https://github.com/OCamlPro/matla
 ...
 > cd matla
 ...
 > cargo install --path matla
-...
-```
-
-Install from git (**not recommended** as long as the repo is private):
-
-```text
-> cargo install --git https://github.com/AdrienChampion/matla
 ...
 ```
 
@@ -182,3 +184,4 @@ and *release* mode.
 
 [crates.io]: https://crates.io
 [installing rust]: https://www.rust-lang.org/tools/install
+[user manual]: https://ocamlpro.github.io/matla/manual
