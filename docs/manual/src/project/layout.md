@@ -93,3 +93,5 @@ sounds like it's doing.
 Matla also recognizes the optional `tests` project sub-directory: this is where your integration
 tests will reside. Let's forget about this for now as we will [discuss testing in details
 later](../testing).
+
+[run/ok]: https://github.com/OCamlPro/matla/tree/latest/docs/manual/src/run/code/ok

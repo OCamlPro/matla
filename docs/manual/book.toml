@@ -13,8 +13,9 @@ exclude = [
 	# linkcheck seems to struggle with these for some reason
 	'../app_tla',
 	'../setup',
-	'../testing',
 	'../project',
+	'../run',
+	'../testing',
 	'crates\.io',
 	# TODO remove this once the repo is up and public
 	'https://github\.com/OCamlPro/matla/releases',
