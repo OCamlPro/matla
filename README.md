@@ -40,7 +40,7 @@ Matla is not on [crates.io], you can still install it with `cargo` which you get
 - Install from git:
 
     ```text
-    > cargo install --git https://github.com/OCamlPro/matla#latest
+    > cargo install --git https://github.com/OCamlPro/matla#latest matla
     ...
     ```
 
