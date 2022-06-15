@@ -124,7 +124,7 @@ Let's add a non-debug check that we expect to fail:
 
 Running matla again, we get
 
-```
+```text
 {{ #include code/cond_comp_1.test:3: }}
 ```
 
