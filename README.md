@@ -37,29 +37,31 @@ Non-features
 
 Matla is not on [crates.io], you can still install it with `cargo` which you get when [installing rust].
 
-Install from git (**not recommended** as long as the repo is private):
+- Install from git:
 
-```text
-> cargo install --git https://github.com/OCamlPro/matla#latest
-...
-```
+    ```text
+    > cargo install --git https://github.com/OCamlPro/matla#latest
+    ...
+    ```
 
-Install from local clone (**recommended** as long as the repo is private):
+- Install from local clone (**recommended** as long as the repo is private):
 
-```text
-> git clone https://github.com/OCamlPro/matla
-...
-> cd matla
-...
-> cargo install --path matla
-...
-```
+    ```text
+    > git clone https://github.com/OCamlPro/matla
+    ...
+    > cd matla
+    ...
+    > cargo install --path matla
+    ...
+    ```
+
+- Retrieve the latest binary from [the release page][releases]
 
 Make sure everything works:
 
 ```
 > matla help
-matla 0.1.0
+matla 0.1.0-alpha0
 
 Manager for TLA+ projects.
 
@@ -186,3 +188,4 @@ and *release* mode.
 [installing rust]: https://www.rust-lang.org/tools/install
 [user manual]: https://ocamlpro.github.io/matla/manual
 [ocp]: https://ocamlpro.com
+[releases]: https://github.com/OCamlPro/matla/releases

@@ -1,6 +1,6 @@
 [package]
 name = "matla"
-version = "0.1.0-alpha-1"
+version = "0.1.0-alpha0"
 edition = "2021"
 description = "A project manager for TLA+ projects."
 
