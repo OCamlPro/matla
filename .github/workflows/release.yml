@@ -18,6 +18,7 @@ jobs:
       - name: Compile and release
         uses: rust-build/rust-build.action@master
         env:
+          SRC_DIR: matla
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RUSTTARGET: ${{ matrix.target }}
           EXTRA_FILES: "README.md LICENSE"
