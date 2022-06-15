@@ -36,9 +36,15 @@ jobs:
       - name: Build User Manual 🔧
         run: |
           mdbook build -d ../../target/docs/manual docs/manual
+      
+      - name: Setup Pages
+        run: |
+          mkdir -p target/deploy
+          mv target/docs/manual/html target/deploy/manual
+          cp README.md target/deploy/index.md
 
       - name: Deploy 🚀
         uses: JamesIves/github-pages-deploy-action@v4.3.3
         with:
           branch: gh-pages
-          folder: targets/docs/manual/html
+          folder: targets/deploy
