@@ -1,6 +1,6 @@
 # matla
 
-A manager for TLA+ projects.
+A manager for TLA+ projects by [OCamlPro][ocp].
 
 Read the user manual [here][user manual].
 
@@ -185,3 +185,4 @@ and *release* mode.
 [crates.io]: https://crates.io
 [installing rust]: https://www.rust-lang.org/tools/install
 [user manual]: https://ocamlpro.github.io/matla/manual
+[ocp]: https://ocamlpro.com
