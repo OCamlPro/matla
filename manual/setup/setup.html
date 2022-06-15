@@ -1,0 +1,322 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js light">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Setup and portable mode - Matla User Manual</title>
+        <!-- Custom HTML head -->
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../highlight.css">
+        <link rel="stylesheet" href="../tomorrow-night.css">
+        <link rel="stylesheet" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+    </head>
+    <body>
+        <!-- Provide site root to javascript -->
+        <script type="text/javascript">
+            var path_to_root = "../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script type="text/javascript">
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('no-js')
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add('js');
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var html = document.querySelector('html');
+            var sidebar = 'hidden';
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded "><a href="../intro/index.html"><strong aria-hidden="true">1.</strong> A manager for TLA projects</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../intro/motivation.html"><strong aria-hidden="true">1.1.</strong> Motivation</a></li><li class="chapter-item expanded "><a href="../intro/ccompilation.html"><strong aria-hidden="true">1.2.</strong> Motivation: conditional compilation</a></li><li class="chapter-item expanded "><a href="../intro/testing.html"><strong aria-hidden="true">1.3.</strong> Motivation: testing</a></li></ol></li><li class="chapter-item expanded "><a href="../setup/index.html"><strong aria-hidden="true">2.</strong> Install, build, setup and portable mode</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../setup/build.html"><strong aria-hidden="true">2.1.</strong> Build from sources</a></li><li class="chapter-item expanded "><a href="../setup/setup.html" class="active"><strong aria-hidden="true">2.2.</strong> Setup and portable mode</a></li></ol></li><li class="chapter-item expanded "><a href="../project/index.html"><strong aria-hidden="true">3.</strong> Init and project layout</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../project/init.html"><strong aria-hidden="true">3.1.</strong> Init and project configuration</a></li><li class="chapter-item expanded "><a href="../project/layout.html"><strong aria-hidden="true">3.2.</strong> Project layout</a></li></ol></li><li class="chapter-item expanded "><a href="../run/index.html"><strong aria-hidden="true">4.</strong> Running</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../run/cexs.html"><strong aria-hidden="true">4.1.</strong> Running: counterexample traces</a></li><li class="chapter-item expanded "><a href="../run/conf.html"><strong aria-hidden="true">4.2.</strong> User/project configuration and command-line arguments</a></li><li class="chapter-item expanded "><a href="../run/ccompilation.html"><strong aria-hidden="true">4.3.</strong> Debug/release: conditional compilation</a></li></ol></li><li class="chapter-item expanded "><a href="../testing/index.html"><strong aria-hidden="true">5.</strong> Testing</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../testing/plain.html"><strong aria-hidden="true">5.1.</strong> Plain tests</a></li><li class="chapter-item expanded "><a href="../testing/outcome.html"><strong aria-hidden="true">5.2.</strong> Test configuration and expected outcome</a></li><li class="chapter-item expanded "><a href="../testing/libs.html"><strong aria-hidden="true">5.3.</strong> Test libraries</a></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky bordered">
+                    <div class="left-buttons">
+                        <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </button>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Matla User Manual</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script type="text/javascript">
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="setup-and-portable-mode"><a class="header" href="#setup-and-portable-mode">Setup and portable mode</a></h1>
+<p>At this point, you have a (hopefully recent) matla binary in your path.</p>
+<pre><code class="language-text">&gt; matla help
+matla 0.1.0
+
+Manager for TLA+ projects.
+
+USAGE:
+    matla [FLAGS] [OPTIONS] [SUBCOMMAND]
+
+FLAGS:
+    -p, --portable    Infer toolchain from environment, load no user configuration
+    -v                Increases verbosity, capped at 3
+    -h, --help        Prints help information
+    -V, --version     Prints version information
+
+OPTIONS:
+    -c, --color &lt;true|on|false|off&gt;    (De)activates colored output [default: on]
+
+SUBCOMMANDS:
+    clean        Cleans the current project: deletes the `target` directory.
+    help         Prints this message or the help of the given subcommand(s)
+    init         Initializes an existing directory as a matla project.
+    run          Runs TLC on a TLA module in a project directory.
+    setup        Performs this initial matla setup, required before running matla.
+    test         Run the tests of a project.
+    tlc          Calls TLC with some arguments.
+    uninstall    Deletes your matla user directory (cannot be undone).
+    update       Updates the `tla2tools` jar in the matla user directory.
+</code></pre>
+<p>Obviously, everything works out of the box:</p>
+<pre><code class="language-text">&gt; matla init
+Error: have you run `matla setup` yet?
+
+Caused by:
+    0: if you have, your user directory might be corrupted
+    1: just re-run `matla setup` to make sure
+    2: failed to load configuration
+    3: failed to load user configuration
+    4: failed to load file `~/.config/matla/matla.toml`
+    5: No such file or directory (os error 2)
+</code></pre>
+<p>except it actually does not. Matla does let us know some setup is needed and
+how to perform it, so let's discuss that.</p>
+<p><strong>By default</strong>, matla requires a setup step before running which we present below. This setup will
+create a directory where matla can store your user configuration which controls the underlying TLC
+configuration among other things. If that is not something you are comfortable with, do read the
+following sections as the <a href="#portable-mode">last one</a> discusses matla's <strong>portable mode</strong> which does
+not need any user configuration files/directories to be created.</p>
+<p>Also, if at any point you want matla to remove all user configuration data you can simply run
+<code>matla uninstall</code>. There is no functional difference with manually deleting matla's user
+configuration directory, which we discuss next.</p>
+<h2 id="homeconfigmatla"><a class="header" href="#homeconfigmatla"><code>$HOME/.config/matla</code></a></h2>
+<p>Following modern unix-flavored conventions, matla's configuration directory is
+<code>$HOME/.config/matla</code>.</p>
+<blockquote>
+<p>For Windows users, <code>$HOME</code> is your user account's <code>Documents</code> folder. Well, we're a <em>100%</em> almost
+sure it's probably that, but definitely do check just in case. And let us know if we were right
+if you feel like receiving our eternal (intangible) gratitude!</p>
+</blockquote>
+<p>Previously, we ran <code>matla init</code> and caused matla to complain that we need to run <code>matla setup</code>.
+Doing so causes matla to ask a few questions as we are going to see now, but you can check the
+<code>setup</code> options with <code>matla help setup</code> if you already know the kind of setup you want.</p>
+<pre><code class="language-text">&gt; matla setup
+|===| TLA+ toolchain setup
+| Config will live in `~/.config/matla`, okay to create this directory? [Yn]
+</code></pre>
+<p>If you decide to answer <em>no</em>, then your only option is <a href="#portable-mode"><em>portable mode</em></a>. Say we
+agree:</p>
+<pre><code class="language-text">| y
+|
+| Matla can either:
+| - retrieve the tla2tools jar from your environment, or
+| - download it for you.
+| Download the tla2tools to `~/.config/matla`? If not, matla will attempt to find it in your path [Yn]
+</code></pre>
+<p>Answering <em>no</em> at this point causes matla to look for the TLA+ toolbox in your path, and fail if it
+cannot find one. Having matla handle the toolbox for us is arguably more convenient, so let's do
+that:</p>
+<pre><code class="language-text">| y
+| Downloading toolbox from `https://github.com/tlaplus/tlaplus/releases/latest/download/tla2tools.jar`...
+| Download completed successfully.
+| Writing downloaded file to `~/.config/matla/tla2tools.jar`...
+</code></pre>
+<p>Nice, the TLA+ toolbox is now in the matla user configuration directory. Matla's setup is done at
+this point, right after it displays the contents of your user (<em>default</em>, here) configuration file:</p>
+<pre><code class="language-text">|
+| Writing configuration file to user directory, its content is:
+|
+| ```
+| [config]
+| tla2tools = '/Users/adrien/.config/matla/tla2tools.jar'
+| [tlc_cla]
+| # # Full configuration for TLC runtime arguments customization
+| #
+| # # Sets the number of workers, `0` or `auto` for `auto`.
+| # workers = 'auto' # &lt;int|'auto'&gt;#
+| # # If active, counterexample traces will only display state variables when they change.
+| # diff_cexs = 'on' # &lt;'on'|'off'|'true'|'false'&gt;#
+| # # Sets the seed when running TLC, random if none.
+| # seed = 0 # &lt;int|'random'&gt;#
+| # # If active, TLC will not output print statements.
+| # terse = 'off' # &lt;'on'|'off'|'true'|'false'&gt;#
+| # # Maximum size of the sets TLC is allowed to enumerate.
+| # max_set_size = 'default' # &lt;u64|'default'&gt;#
+| # # If active, TLC will check for (and fail on) deadlocks.
+| # check_deadlocks = 'on' # &lt;'on'|'off'|'true'|'false'&gt;#
+| # # If active, matla will present the callstack on errors, whenever possible.
+| # print_callstack = 'off' # &lt;'on'|'off'|'true'|'false'&gt;#
+| # # If active, matla will present time statistics during runs.
+| # print_timestats = 'on' # &lt;'on'|'off'|'true'|'false'&gt;
+| ```
+|
+| Configuration regarding `tlc_cla` (TLC command-line arguments) corresponds to
+| options for `matla run`. You can check them out with `matla help run`.
+| The configuration above corresponds to matla's defaults, and all items are optional.
+|
+| Setup complete, matla is ready to go.
+|===|
+</code></pre>
+<p>If you are familiar with TLC, you probably see right away what the <code>[tlc_cla]</code> TOML-section deals
+with. It specifies your <em>user-level</em> TLC options; we will see later that this is a first level of
+configuration, the other two being <em>project-level</em> configuration (a TOML file in your project
+directory) and <em>command-line-level</em> configuration (options passed to <code>matla run</code>). Basically, your
+user-level configuration is always used except for options specified in the project-level
+configuration, except for options specified at command-line level.</p>
+<p>You can uncomment any of the items in this file, change them, and thus decide what the default
+behavior of TLC (through matla) should be. Just keep in mind that <a href="../project/init.html#project-level-configuration">project
+configuration</a> can preempt these settings, as can
+matla's command-line arguments.</p>
+<p>We also see that your user configuration file stores the path to the TLA+ toolbox, which is the
+<code>jar</code> downloaded during setup. If you had asked matla not to download it but instead retrieve it
+from the environment, then assuming it found <code>some/path/tla2tools.jar</code> somewhere that's what the
+value of the <code>tla2tools</code> item of the configuration file would be.</p>
+<p>At this point everything is in place and you can move on to the next chapters of this manual. The
+section below is for users that do not want matla to create a user configuration directory for some
+reason.</p>
+<h2 id="portable-mode"><a class="header" href="#portable-mode">Portable mode</a></h2>
+<p>Some readers might not like this <em>&quot;hidden configuration directory&quot;</em> approach and prefer a
+<em>portable</em> solution, where <em>matla</em> has no such impact on your home directory. Although it is not
+the intended way to use matla, such readers will be glad to know they can run matla in <em>portable
+mode</em> with the <code>--portable</code> (<code>-p</code> for short) flag.</p>
+<p>In <em>portable mode</em>, matla does not look for <code>$HOME/.config/matla</code> (which would fail) and instead
+scans the environment it's running in (mostly your <code>$PATH</code> environment variable) for
+<code>tla2tools.jar</code>. Assuming it finds one, matla will just use that and run normally. Obviously,
+running in portable mode means you will not be able to have a user configuration file.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../setup/build.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+                            <a rel="next" href="../project/index.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../setup/build.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                    <a rel="next" href="../project/index.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+        <script type="text/javascript">
+            window.playground_copyable = true;
+        </script>
+        <script src="../elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../searcher.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../book.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- Custom JS scripts -->
+    </body>
+</html>

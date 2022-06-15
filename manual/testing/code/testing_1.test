@@ -1,0 +1,7 @@
+> matla test
+# 0
+running 3 integration tests sequentially
+    test `/encoding_2`: success 😺
+    test `/encoding_1`: success 😺
+    test `/runtime_1`: success 😺
+integration tests: 3 successful of 3

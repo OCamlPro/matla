@@ -1,0 +1,1428 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js light">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Matla User Manual</title>
+        <meta name="robots" content="noindex" />
+        <!-- Custom HTML head -->
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+    </head>
+    <body>
+        <!-- Provide site root to javascript -->
+        <script type="text/javascript">
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script type="text/javascript">
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('no-js')
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add('js');
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var html = document.querySelector('html');
+            var sidebar = 'hidden';
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded "><a href="intro/index.html"><strong aria-hidden="true">1.</strong> A manager for TLA projects</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="intro/motivation.html"><strong aria-hidden="true">1.1.</strong> Motivation</a></li><li class="chapter-item expanded "><a href="intro/ccompilation.html"><strong aria-hidden="true">1.2.</strong> Motivation: conditional compilation</a></li><li class="chapter-item expanded "><a href="intro/testing.html"><strong aria-hidden="true">1.3.</strong> Motivation: testing</a></li></ol></li><li class="chapter-item expanded "><a href="setup/index.html"><strong aria-hidden="true">2.</strong> Install, build, setup and portable mode</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="setup/build.html"><strong aria-hidden="true">2.1.</strong> Build from sources</a></li><li class="chapter-item expanded "><a href="setup/setup.html"><strong aria-hidden="true">2.2.</strong> Setup and portable mode</a></li></ol></li><li class="chapter-item expanded "><a href="project/index.html"><strong aria-hidden="true">3.</strong> Init and project layout</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="project/init.html"><strong aria-hidden="true">3.1.</strong> Init and project configuration</a></li><li class="chapter-item expanded "><a href="project/layout.html"><strong aria-hidden="true">3.2.</strong> Project layout</a></li></ol></li><li class="chapter-item expanded "><a href="run/index.html"><strong aria-hidden="true">4.</strong> Running</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="run/cexs.html"><strong aria-hidden="true">4.1.</strong> Running: counterexample traces</a></li><li class="chapter-item expanded "><a href="run/conf.html"><strong aria-hidden="true">4.2.</strong> User/project configuration and command-line arguments</a></li><li class="chapter-item expanded "><a href="run/ccompilation.html"><strong aria-hidden="true">4.3.</strong> Debug/release: conditional compilation</a></li></ol></li><li class="chapter-item expanded "><a href="testing/index.html"><strong aria-hidden="true">5.</strong> Testing</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="testing/plain.html"><strong aria-hidden="true">5.1.</strong> Plain tests</a></li><li class="chapter-item expanded "><a href="testing/outcome.html"><strong aria-hidden="true">5.2.</strong> Test configuration and expected outcome</a></li><li class="chapter-item expanded "><a href="testing/libs.html"><strong aria-hidden="true">5.3.</strong> Test libraries</a></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky bordered">
+                    <div class="left-buttons">
+                        <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </button>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Matla User Manual</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script type="text/javascript">
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="a-manager-for-tla-projects"><a class="header" href="#a-manager-for-tla-projects">A manager for TLA projects</a></h1>
+<ul>
+<li>By Adrien Champion, Keryan Didier, Steven de Oliveira, <a href="https://ocamlpro.com/">OCamlPro</a>.</li>
+</ul>
+<p><em>Matla</em> is a <strong>ma</strong>nager for <a href="https://lamport.azurewebsites.net/tla/tools.html"><strong>TLA</strong>+</a> projects
+written in <a href="https://www.rust-lang.org">Rust</a> and pronounced like
+<a href="https://translate.google.com/?hl=en&amp;sl=fr&amp;tl=en&amp;text=matelas&amp;op=translate"><em>&quot;matelas&quot;</em></a>, which is
+French for <em>&quot;mattress&quot;</em>. It is heavily inspired by <a href="https://doc.rust-lang.org/cargo"><em>cargo</em></a>, the
+critically acclaimed Rust project manager.</p>
+<blockquote>
+<p>This user manual assumes you are familiar with <em>TLA+</em> and its associated verification engine
+<em>TLC</em>.</p>
+</blockquote>
+<!-- > If you are not, [this appendix](../app_tla/readme.md) goes over the basics of TLA+ and TLC. -->
+<p>Matla is not a big project, it is inspired by cargo but nowhere near as complex or feature-packed.
+We develop matla with three things (a <em>trifecta</em> of sorts) in mind: safety (confidence in the code
+and thus the analysis), simplicity and ergonomics. This last aspect is not here for PR reasons: as
+heavy Rust users, we recognize how nice an experience it is to interact with a tool with readable,
+colored output, and where each interaction shows a great deal of care for user-friendliness.</p>
+<p><br />
+</p>
+<p>There is a <a href="intro/index.html#tldr">TLDR</a> at the end of this file for crash course on using matla.</p>
+<p><br />
+</p>
+<p>Matla is still very young. There are many issues to address; some of them have to do with quirks at
+TLC-level, others are just blind spots that we have not triggered yet in our use of matla. If you
+run into some of these problems, consider <a href="https://github.com/OCamlPro/matla/issues">opening an issue</a> to help us improve matla 😸</p>
+<h2 id="main-features-currently-implemented"><a class="header" href="#main-features-currently-implemented">Main features currently implemented</a></h2>
+<p>Motivated in the next section and discussed in details in the rest of this document:</p>
+<ul>
+<li>retrieve/handle/update the TLA+ toolbox <code>tla2tool.jar</code> behind the scenes;</li>
+<li>convenient automatic project initialization;</li>
+<li>deal with the files generated by TLC's analyses cleanly, in a <code>gitignore</code>d <code>target</code> folder where
+all compilation/run artifacts live;</li>
+<li>allow users to have a global configuration (specifying TLC arguments such as <code>seed</code>, <code>difftrace</code>,
+...), (potentially/partially) overridden by the project configuration, (potentially/partially)
+overridden by command-line configuration (options);</li>
+<li>handling integration tests in a directory that's distinct from the main source directory;</li>
+<li>debug assertions, <em>i.e.</em> assertions checked in <code>debug</code> mode but compiled away in <code>release</code>
+mode (the mode is specified by users whenever they call matla, <em>e.g.</em> <code>matla run --release</code>);</li>
+<li>modernized output with clearer error messages: very much WIP at the moment, most likely requires
+a collaboration with the TLC team;</li>
+<li>pretty, readable counterexample traces.</li>
+</ul>
+<h2 id="features-we-are-considering-implementing-soon-ish"><a class="header" href="#features-we-are-considering-implementing-soon-ish">Features we are considering implementing soon-ish</a></h2>
+<p>Very strong emphasis on <strong>soon-ish</strong>:</p>
+<ul>
+<li>unit tests specified in TLA+ source files;</li>
+<li>documentation tests specified in comments in the TLA+ source files;</li>
+<li>documentation generation: the TLA+ toolbox can generate a very nice PDF of the sources using
+LaTeX, but on big projects the lack of hyperlinks, search bar, <em>etc.</em> can be quite frustrating.
+It is also not clear we can have documentation tests appear nicely in the documentation using
+TLA+ toolbox's documentation capabilities. Also, we are quite fond of markdown as a (code)
+documentation language given how simple and universal it has become (for better or worse);</li>
+</ul>
+<h2 id="features-we-might-consider-at-some-point"><a class="header" href="#features-we-might-consider-at-some-point">Features we might consider at some point</a></h2>
+<ul>
+<li>notion of dependency (library), most likely building on <code>git</code>-based online services;</li>
+<li>optional static type-checking: quite ambitious as it requires parsing, representing and
+manipulating (subsets of) the TLA+ language. Do not hold your breath.</li>
+</ul>
+<h2 id="tldr"><a class="header" href="#tldr">TL;DR</a></h2>
+<ul>
+<li>
+<p><a href="intro/../setup">install</a> by retrieving <a href="https://github.com/OCamlPro/matla/releases">the latest release</a> or using cargo</p>
+<p><code>cargo install https://github.com/OCamlPro/matla#latest</code></p>
+</li>
+<li>
+<p><a href="intro/../setup/setup.html">setup</a>, required unless you plan to run in <em>portable mode</em> (<code>matla --portable ...</code>/<code>matla -p ...</code>)</p>
+<p><code>matla setup</code></p>
+</li>
+<li>
+<p><a href="intro/../project">initialize</a> a project directory</p>
+<p><code>matla init</code></p>
+</li>
+<li>
+<p><a href="intro/../run">run</a> <code>top.tla</code>/<code>top.cfg</code></p>
+<p><code>matla run top</code></p>
+<p>or <code>matla run</code> if there is only one <code>.tla</code>/<code>.cfg</code> pair in the project directory</p>
+</li>
+<li>
+<p><a href="intro/../testing">run tests</a> (modules with <code>.tla</code> and <code>.cfg</code> files) in <code>&lt;proj_dir&gt;/tests</code></p>
+<p><code>matla test</code></p>
+</li>
+<li>
+<p>you will probably want to read about <a href="intro/../run/conf.html">matla's user/project/cla configuration hierarchy</a></p>
+</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="motivation"><a class="header" href="#motivation">Motivation</a></h1>
+<p>Before matla and to the best of our knowledge, to compile and analyze (<em>&quot;run&quot;</em>) TLA+ specifications
+(<em>&quot;programs&quot;</em>) consisted in either running <a href="https://github.com/tlaplus/tlaplus">TLC</a> manually in a
+terminal through the <a href="https://lamport.azurewebsites.net/tla/toolbox.html">TLA+ toolbox</a> java jar
+file, or to use the TLA+ toolbox IDE included in the TLA+ toolbox.</p>
+<!-- Both these workflows are equivalent, the latter being a GUI-click-this-button version of the former. -->
+<p>As frequent TLA+ developers, we write and maintain sizeable TLA+ codebases for formal specification
+and verification purposes in industrial and semi-industrial (R&amp;D) projects. It is our humble opinion
+that the <em>normal</em> TLA+ workflow, <em>i.e.</em> calling TLC directly, does not handle various practical
+aspects such as dealing with a test suite. Testing, and in particular sanity checks, is very
+valuable to us since our final goal is usually to prove the safety of (the TLA+ encoding of)
+whatever system we're working on. Sanity checks and regression tests raise our confidence that the
+encoding is correct, the invariants and properties make sense, <em>etc.</em> and are crucial in our (and
+thus the client's) confidence in (dis)proving the safety of the actual system.</p>
+<blockquote>
+<p>It quite obvious that TLC is not built to handle test suites and other project-level features such
+as the ones matla provides. TLC is akin to <code>gcc</code> or Rust's <code>rustc</code> compiler: it focuses on
+compiling and running, not managing a project. We are <strong>not</strong> criticizing TLC for lacking the
+features matla provides. Matla builds on top of TLC just like <em>cargo</em> builds on top of the <code>rustc</code>
+compiler.</p>
+</blockquote>
+<p>The next chapters go over installing matla, its main features and how to use them. Before that, let
+us go briefly over the core features we wanted in matla and why.</p>
+<p>The first, basic feature we wanted matla to have is to deal with the TLA+ toolbox <code>tla2tools.jar</code>
+(retrieve, handle, keep updated) to abstract it away from the user; much like <em>cargo</em> completely
+abstracts away <code>rustc</code>. We also want the usual modern project manager comfort: initialize a project
+with everything matla needs, automatically add the build directory to the <code>.gitignore</code> if one is
+detected, <em>etc.</em></p>
+<p>The remaining main features are more involved and require more motivation, they are discussed in the
+remaining sections of this chapter. Feel free to skip to the next chapter if you do not need further
+motivating.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="motivation-conditional-compilation"><a class="header" href="#motivation-conditional-compilation">Motivation: conditional compilation</a></h1>
+<p>This is actually the main reason we started developing matla. If you are familiar with TLA+, you
+know it is a dynamically-typed language. Static typing, and especially static strong-typing, is
+basically a static analysis that makes sure (state) variables cannot store values of unexpected
+types. Dynamically-typed languages such as TLA+ are more flexible that statically-typed ones in that
+variables can end up storing anything as the program runs. Whenever a primitive operation is applied
+to a value, the runtime (TLC, here) checks the application is legal; if it is not, a runtime error
+is generated.</p>
+<p>Many a TLA+ developer have issues with this aspect of TLA+. On one hand, static typing means the
+program will not compile because someone stored a nonsensical value in a variable, which raises the
+trust in the TLA+ code and thus the analysis and its outcome. Also, this means a lengthy analysis
+(hours, days, or even weeks) cannot fail because, say, for some reason <code>x</code> in <code>x + 1</code> happens to
+store a string; meaning the bug must be fixed and the lengthy analysis must restart from scratch. On
+the other hand, dynamic typing offers flexibility such as being able to build heterogeneous
+lists/arrays.</p>
+<p>Still, TLA+/TLC are what they are: dynamically-typed. As a consequence, static-typing fanatics like
+us tend to <strong>heavily</strong> annotate their TLA+ code with type-checking <em>assertions</em>. Typically,
+function definitions will start with a check that the arguments have the expected type to avoid
+potentially misleading errors such as <em>&quot;cannot compute length of integer&quot;</em> with a more or less
+relevant location.</p>
+<p>Our TLA+ projects tend to have <em>a lot</em> of checks like these; especially since besides
+type-checking, one usually also checks for structural invariants of the encoding as those also
+greatly raise the trust in the relevance of any analysis.</p>
+<p>While tedious at times, writing these assertions is a good exercise and we have little to no
+complaints about that. This does change when we run the final analysis however. All our assertions
+help us develop, sanity-check, debug, catch regressions... but we generally don't want them to run
+in the final analyses. On large projects, TLC's analyses can take very long; checking each
+assertion in this context might make sense for a few of them, but on the whole they tend to make
+analyses take much, much, <strong>much</strong> longer.</p>
+<p>Hence, we want to have a mechanism for <em>debug assertions</em>, very similar to <a href="https://doc.rust-lang.org/std/macro.debug_assert.html">Rust's <code>debug_assert</code>
+macros</a>). Users should then be able to run
+analyses (and tests!) in <code>debug</code> or <code>release</code> mode, with debug assertions only active in <code>debug</code>
+and compiled away in <code>release</code>.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="motivation-testing"><a class="header" href="#motivation-testing">Motivation: Testing</a></h1>
+<p>As discussed previously, testing is mandatory as it raises significantly the confidence in the
+encoding, the invariants and properties, and thus the final analysis and its outcome. We wanted
+projects to have an optional <code>tests</code> directory, separated from the actual codebase, where sanity
+checks, regression tests <em>etc.</em> can be. These tests are akin to integration tests; on the other
+hand, unit tests should live in source files in the actual codebase using special syntax to be
+compiled away in the final analysis/es. Documentation tests and compiling/running/checking them
+would also be very useful, both as a means of documentation and for catching bugs.</p>
+<p>Obviously, we want to be able to check tests against an expected result. Matla's tests needed to
+include a way for users to specify if the test is expected to succeed, fail at compile-time and how,
+or fail at run-time and how ---invariant violation, temporal violation, type-checking error,
+assertion failure <em>etc.</em></p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="install-build-setup-and-portable-mode"><a class="header" href="#install-build-setup-and-portable-mode">Install, build, setup and portable mode</a></h1>
+<p>This chapter covers the basics of installing and building matla, as well as its initial (optional)
+setup.</p>
+<h2 id="downloading-a-release"><a class="header" href="#downloading-a-release">Downloading a release</a></h2>
+<p>Probably the easiest way to use matla is to download the latest release at</p>
+<ul>
+<li><a href="https://github.com/OCamlPro/matla/releases">https://github.com/OCamlPro/matla/releases</a></li>
+</ul>
+<p>Put it wherever is convenient for you, ideally in your <code>$PATH</code>, and you're good to go. Now, this
+installation method is not great for updating matla as it requires manually checking whether a new
+version is available. The following installation method is arguably more convenient in that regard.</p>
+<h2 id="using-cargo"><a class="header" href="#using-cargo">Using cargo</a></h2>
+<p>Assuming you have <a href="https://www.rust-lang.org/tools/install">Rust</a> installed or are willing to install it, you can use <code>cargo</code> to handle matla's installation for you.</p>
+<p>Now, matla is <strong>not</strong> published as a <a href="https://crates.io">crates.io</a> package. As such, Rust's usual
+<code>cargo install matla</code> will not work; to install matla, please provide the repository's URL
+explicitly as follows.</p>
+<pre><code class="language-bash"># Matla's official repository, *latest* release branch:
+&gt; cargo install https://github.com/OCamlPro/matla#latest
+# Bleeding edge, most recent nightly version available in the *main* branch:
+&gt; cargo install https://github.com/OCamlPro/matla#main
+# Or just:
+&gt; cargo install https://github.com/OCamlPro/matla
+</code></pre>
+<p>To update matla, simply run the same command with <code>-f</code> to force the update:</p>
+<pre><code class="language-bash">&gt; cargo install -f https://github.com/...
+</code></pre>
+<p>Alternatively and if you are a frequent Rust flyer, consider using the extremely convenient
+<a href="https://github.com/nabijaczleweli/cargo-update"><code>cargo-update</code></a> cargo plugin that can update
+outdated binary Rust crates for you.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="build-from-sources"><a class="header" href="#build-from-sources">Build from sources</a></h1>
+<p>Building matla from sources is quite easy and only requires <a href="https://www.rust-lang.org/tools/install">Rust to be
+installed</a>.</p>
+<p>Simply clone the repository, change to whatever branch you want to build, and <code>cargo build</code> or
+<code>cargo build --release</code> matla.</p>
+<pre><code class="language-bash">&gt; git clone https://github.com/OCamlPro/matla
+[...]
+&gt; cd matla
+&gt; git checkout [...]
+[...]
+# Maybe run tests to make sure everything's fine.
+&gt; cargo test
+[...]
+&gt; cargo build --release
+[...]
+&gt; ls target/release/matla
+target/release/matla*
+</code></pre>
+<p>Move/symlink the resulting binary as you see fit and start writing TLA+ projects using matla!</p>
+<p>Alternatively, run <code>cargo install --path matla</code> to have cargo handle compilation and putting the
+binary in your path.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="setup-and-portable-mode"><a class="header" href="#setup-and-portable-mode">Setup and portable mode</a></h1>
+<p>At this point, you have a (hopefully recent) matla binary in your path.</p>
+<pre><code class="language-text">&gt; matla help
+matla 0.1.0
+
+Manager for TLA+ projects.
+
+USAGE:
+    matla [FLAGS] [OPTIONS] [SUBCOMMAND]
+
+FLAGS:
+    -p, --portable    Infer toolchain from environment, load no user configuration
+    -v                Increases verbosity, capped at 3
+    -h, --help        Prints help information
+    -V, --version     Prints version information
+
+OPTIONS:
+    -c, --color &lt;true|on|false|off&gt;    (De)activates colored output [default: on]
+
+SUBCOMMANDS:
+    clean        Cleans the current project: deletes the `target` directory.
+    help         Prints this message or the help of the given subcommand(s)
+    init         Initializes an existing directory as a matla project.
+    run          Runs TLC on a TLA module in a project directory.
+    setup        Performs this initial matla setup, required before running matla.
+    test         Run the tests of a project.
+    tlc          Calls TLC with some arguments.
+    uninstall    Deletes your matla user directory (cannot be undone).
+    update       Updates the `tla2tools` jar in the matla user directory.
+</code></pre>
+<p>Obviously, everything works out of the box:</p>
+<pre><code class="language-text">&gt; matla init
+Error: have you run `matla setup` yet?
+
+Caused by:
+    0: if you have, your user directory might be corrupted
+    1: just re-run `matla setup` to make sure
+    2: failed to load configuration
+    3: failed to load user configuration
+    4: failed to load file `~/.config/matla/matla.toml`
+    5: No such file or directory (os error 2)
+</code></pre>
+<p>except it actually does not. Matla does let us know some setup is needed and
+how to perform it, so let's discuss that.</p>
+<p><strong>By default</strong>, matla requires a setup step before running which we present below. This setup will
+create a directory where matla can store your user configuration which controls the underlying TLC
+configuration among other things. If that is not something you are comfortable with, do read the
+following sections as the <a href="setup/setup.html#portable-mode">last one</a> discusses matla's <strong>portable mode</strong> which does
+not need any user configuration files/directories to be created.</p>
+<p>Also, if at any point you want matla to remove all user configuration data you can simply run
+<code>matla uninstall</code>. There is no functional difference with manually deleting matla's user
+configuration directory, which we discuss next.</p>
+<h2 id="homeconfigmatla"><a class="header" href="#homeconfigmatla"><code>$HOME/.config/matla</code></a></h2>
+<p>Following modern unix-flavored conventions, matla's configuration directory is
+<code>$HOME/.config/matla</code>.</p>
+<blockquote>
+<p>For Windows users, <code>$HOME</code> is your user account's <code>Documents</code> folder. Well, we're a <em>100%</em> almost
+sure it's probably that, but definitely do check just in case. And let us know if we were right
+if you feel like receiving our eternal (intangible) gratitude!</p>
+</blockquote>
+<p>Previously, we ran <code>matla init</code> and caused matla to complain that we need to run <code>matla setup</code>.
+Doing so causes matla to ask a few questions as we are going to see now, but you can check the
+<code>setup</code> options with <code>matla help setup</code> if you already know the kind of setup you want.</p>
+<pre><code class="language-text">&gt; matla setup
+|===| TLA+ toolchain setup
+| Config will live in `~/.config/matla`, okay to create this directory? [Yn]
+</code></pre>
+<p>If you decide to answer <em>no</em>, then your only option is <a href="setup/setup.html#portable-mode"><em>portable mode</em></a>. Say we
+agree:</p>
+<pre><code class="language-text">| y
+|
+| Matla can either:
+| - retrieve the tla2tools jar from your environment, or
+| - download it for you.
+| Download the tla2tools to `~/.config/matla`? If not, matla will attempt to find it in your path [Yn]
+</code></pre>
+<p>Answering <em>no</em> at this point causes matla to look for the TLA+ toolbox in your path, and fail if it
+cannot find one. Having matla handle the toolbox for us is arguably more convenient, so let's do
+that:</p>
+<pre><code class="language-text">| y
+| Downloading toolbox from `https://github.com/tlaplus/tlaplus/releases/latest/download/tla2tools.jar`...
+| Download completed successfully.
+| Writing downloaded file to `~/.config/matla/tla2tools.jar`...
+</code></pre>
+<p>Nice, the TLA+ toolbox is now in the matla user configuration directory. Matla's setup is done at
+this point, right after it displays the contents of your user (<em>default</em>, here) configuration file:</p>
+<pre><code class="language-text">|
+| Writing configuration file to user directory, its content is:
+|
+| ```
+| [config]
+| tla2tools = '/Users/adrien/.config/matla/tla2tools.jar'
+| [tlc_cla]
+| # # Full configuration for TLC runtime arguments customization
+| #
+| # # Sets the number of workers, `0` or `auto` for `auto`.
+| # workers = 'auto' # &lt;int|'auto'&gt;#
+| # # If active, counterexample traces will only display state variables when they change.
+| # diff_cexs = 'on' # &lt;'on'|'off'|'true'|'false'&gt;#
+| # # Sets the seed when running TLC, random if none.
+| # seed = 0 # &lt;int|'random'&gt;#
+| # # If active, TLC will not output print statements.
+| # terse = 'off' # &lt;'on'|'off'|'true'|'false'&gt;#
+| # # Maximum size of the sets TLC is allowed to enumerate.
+| # max_set_size = 'default' # &lt;u64|'default'&gt;#
+| # # If active, TLC will check for (and fail on) deadlocks.
+| # check_deadlocks = 'on' # &lt;'on'|'off'|'true'|'false'&gt;#
+| # # If active, matla will present the callstack on errors, whenever possible.
+| # print_callstack = 'off' # &lt;'on'|'off'|'true'|'false'&gt;#
+| # # If active, matla will present time statistics during runs.
+| # print_timestats = 'on' # &lt;'on'|'off'|'true'|'false'&gt;
+| ```
+|
+| Configuration regarding `tlc_cla` (TLC command-line arguments) corresponds to
+| options for `matla run`. You can check them out with `matla help run`.
+| The configuration above corresponds to matla's defaults, and all items are optional.
+|
+| Setup complete, matla is ready to go.
+|===|
+</code></pre>
+<p>If you are familiar with TLC, you probably see right away what the <code>[tlc_cla]</code> TOML-section deals
+with. It specifies your <em>user-level</em> TLC options; we will see later that this is a first level of
+configuration, the other two being <em>project-level</em> configuration (a TOML file in your project
+directory) and <em>command-line-level</em> configuration (options passed to <code>matla run</code>). Basically, your
+user-level configuration is always used except for options specified in the project-level
+configuration, except for options specified at command-line level.</p>
+<p>You can uncomment any of the items in this file, change them, and thus decide what the default
+behavior of TLC (through matla) should be. Just keep in mind that <a href="setup/../project/init.html#project-level-configuration">project
+configuration</a> can preempt these settings, as can
+matla's command-line arguments.</p>
+<p>We also see that your user configuration file stores the path to the TLA+ toolbox, which is the
+<code>jar</code> downloaded during setup. If you had asked matla not to download it but instead retrieve it
+from the environment, then assuming it found <code>some/path/tla2tools.jar</code> somewhere that's what the
+value of the <code>tla2tools</code> item of the configuration file would be.</p>
+<p>At this point everything is in place and you can move on to the next chapters of this manual. The
+section below is for users that do not want matla to create a user configuration directory for some
+reason.</p>
+<h2 id="portable-mode"><a class="header" href="#portable-mode">Portable mode</a></h2>
+<p>Some readers might not like this <em>&quot;hidden configuration directory&quot;</em> approach and prefer a
+<em>portable</em> solution, where <em>matla</em> has no such impact on your home directory. Although it is not
+the intended way to use matla, such readers will be glad to know they can run matla in <em>portable
+mode</em> with the <code>--portable</code> (<code>-p</code> for short) flag.</p>
+<p>In <em>portable mode</em>, matla does not look for <code>$HOME/.config/matla</code> (which would fail) and instead
+scans the environment it's running in (mostly your <code>$PATH</code> environment variable) for
+<code>tla2tools.jar</code>. Assuming it finds one, matla will just use that and run normally. Obviously,
+running in portable mode means you will not be able to have a user configuration file.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="init-and-project-layout"><a class="header" href="#init-and-project-layout">Init and project layout</a></h1>
+<blockquote>
+<p>Matla project sources for this section available <a href="https://github.com/OCamlPro/matla/tree/latest/docs/manual/src/run/code/ok">here</a>.</p>
+</blockquote>
+<p>Let's dive in on an non-matla TLA+ toy project. From this point, we assume you have performed
+<a href="project/../setup/setup.html">matla's setup</a>.</p>
+<pre><code class="language-text">&gt; ls -a
+.gitignore  sw_0.cfg  sw_0.tla
+
+&gt; bat .gitignore
+───────┬────────────────────────────────────────────────────────────────────────
+       │ File: .gitignore
+───────┼────────────────────────────────────────────────────────────────────────
+   1   │ # Ignore macos trash files
+   2   │ .DS_Store
+───────┴────────────────────────────────────────────────────────────────────────
+</code></pre>
+<p>For the sake of reproducibility, here is the content of the <code>.tla</code> file. It encodes a stopwatch
+(<code>sw</code>) system counting time with <code>cnt</code>, featuring <code>reset</code> and <code>start_stop</code> buttons, and an
+&quot;internal&quot; <code>counting</code> flag. The counter saturates at <code>59</code>.</p>
+<pre><code class="language-text">\* sw_0.tla
+---- MODULE sw_0 ----
+
+LOCAL INSTANCE Integers
+
+VARIABLES cnt, reset, start_stop, counting
+
+svars == &lt;&lt;cnt, reset, start_stop, counting&gt;&gt;
+
+bool(stuff) == stuff \in { TRUE, FALSE }
+
+init ==
+    bool(reset)
+    /\ bool(start_stop)
+    /\ (cnt = 0)
+    /\ (counting = start_stop)
+
+next ==
+    bool(reset')
+    /\ bool(start_stop')
+    /\ (
+        IF start_stop' THEN counting' = ~counting
+        ELSE UNCHANGED counting
+    ) /\ (
+        IF reset' THEN cnt' = 0
+        ELSE IF counting' /\ cnt &lt; 59 THEN cnt' = cnt + 1
+        ELSE UNCHANGED cnt
+    )
+
+inv_cnt_pos == cnt &gt;= 0
+inv_reset == reset =&gt; (cnt = 0)
+
+cnt_leq_10 == cnt &lt;= 10
+
+ ====
+</code></pre>
+<p>And the <code>.cfg</code> file:</p>
+<pre><code class="language-text">\* sw_0.cfg
+INIT init
+NEXT next
+
+INVARIANTS
+    inv_cnt_pos
+    inv_reset
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="init-and-project-configuration"><a class="header" href="#init-and-project-configuration">Init and project configuration</a></h1>
+<p>At this point, our toy project is</p>
+<pre><code class="language-text">&gt; exa -a
+.gitignore  sw_0.cfg  sw_0.tla
+
+&gt; bat .gitignore
+───────┬────────────────────────────────────────────────────────────────────────
+       │ File: .gitignore
+───────┼────────────────────────────────────────────────────────────────────────
+   1   │ # Ignore macos trash files
+   2   │ .DS_Store
+───────┴────────────────────────────────────────────────────────────────────────
+</code></pre>
+<p>Time to <code>matla</code>-ify this project, which is done with <code>matla init</code>.</p>
+<pre><code class="language-text">&gt; matla init
+Setting up your project, hang tight.
+- adding build directory to gitignore if needed...
+- setting up `Matla` module...
+- setting up project configuration file...
+Init complete, your project is ready to roll.
+
+&gt; exa -a
+.gitignore  Matla.tla  Matla.toml  sw_0.cfg  sw_0.tla
+</code></pre>
+<p>We have two new files, but before we discuss them let's adress the <code>.gitignore</code>: in its output,
+matla lets us know that it added its <em>&quot;build directory&quot;</em> to the gitignore <em>if needed</em>, meaning <em>if
+one exists and the build directory is not already there&quot;</em>.</p>
+<pre><code class="language-text">&gt; bat .gitignore
+───────┬────────────────────────────────────────────────────────────────────────
+       │ File: .gitignore
+───────┼────────────────────────────────────────────────────────────────────────
+   1   │ # Ignore macos trash files
+   2   │ .DS_Store
+   3   │
+   4   │ # Ignore matla build directory.
+   5   │ /target
+───────┴────────────────────────────────────────────────────────────────────────
+</code></pre>
+<p>Lines <code>3</code> to <code>5</code> are new and add <code>/target</code> as a directory to ignore. As we will see later, this
+directory will be where matla puts all its compilation/runtime artifacts.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="project-layout"><a class="header" href="#project-layout">Project layout</a></h1>
+<blockquote>
+<p>Matla project sources for this section available <a href="https://github.com/OCamlPro/matla/tree/latest/docs/manual/src/run/code/ok">here</a>.</p>
+</blockquote>
+<p>Diving deeper, let's look at matla's project configuration file, <code>Matla.toml</code>:</p>
+<pre><code class="language-toml">[project]
+# # Full configuration for TLC runtime arguments customization
+#
+# # Sets the number of workers, `0` or `auto` for `auto`.
+# workers = 0 # &lt;int|'auto'&gt;#
+# # If active, counterexample traces will only display state variables when they change.
+# diff_cexs = 'on' # &lt;'on'|'off'|'true'|'false'&gt;#
+# # Sets the seed when running TLC, random if none.
+# seed = 0 # &lt;int|'random'&gt;#
+# # If active, TLC will not output print statements.
+# terse = 'off' # &lt;'on'|'off'|'true'|'false'&gt;#
+# # Maximum size of the sets TLC is allowed to enumerate.
+# max_set_size = 'default' # &lt;u64|'default'&gt;#
+# # If active, TLC will check for (and fail on) deadlocks.
+# check_deadlocks = 'on' # &lt;'on'|'off'|'true'|'false'&gt;#
+# # If active, matla will present the callstack on errors, whenever possible.
+# print_callstack = 'off' # &lt;'on'|'off'|'true'|'false'&gt;#
+# # If active, matla will present time statistics during runs.
+# timestats = 'off' # &lt;'on'|'off'|'true'|'false'&gt;
+</code></pre>
+<p>If you remember, this is <a href="project/../setup/setup.html#homeconfigmatla">pretty much exactly what matla generates on setup as your user
+configuration file</a>. While users can customize how they want TLC
+to behave (when calling matla) in their user configuration file, the project-level configuration
+can override part or all of these settings. This can be useful to make sure all contributors use
+the same TLC-level settings regardless of their user configuration such as seed, deadlock checking,
+<em>etc.</em> if that makes sense for your project.</p>
+<h2 id="the-matla-module"><a class="header" href="#the-matla-module">The <code>Matla</code> module</a></h2>
+<p>The last file <code>matla init</code> generated is the <code>Matla.tla</code> file. This defines a <code>Matla</code> module which is
+~385 lines long. Basically, this module provides functions for <em>asserting</em> things, <em>i.e.</em> wrappers
+around calls to <code>TLC!Assert</code> as well as a few type-checking helpers. For clarity's sake, let's
+discuss only one of the many <code>assert</code> variants.</p>
+<pre><code class="language-text">&gt; bat -p Matla.tla
+---- MODULE Matla ----
+\* Matla helpers, mostly for assertions and debug/release conditional compilation.
+
+\* TLC!Assertions are built on top of the standard `TLC' module.
+LOCAL TLC == INSTANCE TLC
+---- MODULE dbg ----
+\* All functions in this module do nothing in `release' mode.
+
+\* Checks some predicate.
+assert(
+    \* Predicate that must be true.
+    pred,
+    \* Message issued when the predicate is false.
+    message
+) ==
+    TLC!Assert(pred, message)
+
+====
+\* End of module `dbg'.
+
+\* Contains debug-only functions.
+dbg == INSTANCE dbg
+
+\* Checks some predicate.
+\*
+\* Active in debug and release.
+assert(
+    \* Predicate that must be true.
+    pred,
+    \* Message issued when the predicate is false.
+    message
+) ==
+    TLC!Assert(pred, message)
+
+====
+\* End of module `Matla'.
+</code></pre>
+<p>This might be a bit odd: there are two versions of <code>assert</code> with exactly the same definition, but
+one is in a <code>dbg</code> module under <code>Matla</code> while the other is at <code>Matla</code>'s top-level. The same goes for
+all <code>assert</code> variants in the actual <code>Matla.tla</code>.</p>
+<p>You can infer why this is by reading the comments, but basically it is tied to matla's <em>conditional
+compilation</em> capabilities. As discussed earlier and detailed after, matla can run in either <code>debug</code>
+mode or <code>release</code> mode. If, somewhere, we write <code>Matla!assert(...)</code> then regardless of the mode
+matla runs in, the assertion will be evaluated and our run will crash if the assertion does not
+hold.</p>
+<p><code>Matla!dbg!assert(...)</code> is the same but only in <code>debug</code> mode. In <code>release</code> mode, matla will compile
+it away (use <code>TRUE</code> as its definition) to make your big, release-run faster.</p>
+<blockquote>
+<p>Technically, matla does not need to write this <code>Matla.tla</code> file here. It is actually ignored when
+matla runs, as matla generates whatever version correspond to the run mode (<code>debug</code>/<code>release</code>).
+The reason matla does generate this file is <em>i)</em> so that users can actually check what's in it
+and <em>ii)</em> to be compatible with IDEs that rely on the TLA+ toolbox to check your files and
+display errors if needed. Generating <code>Matla.tla</code> here essentially makes your code a legal TLC
+project.</p>
+</blockquote>
+<p>Some matla users might not be interested in this conditional compilation feature. A quick look at
+<code>matla help init</code> will lead you to the <code>--no_matla_module</code> flag which will do exactly what it
+sounds like it's doing.</p>
+<h2 id="tests"><a class="header" href="#tests">Tests</a></h2>
+<p>Matla also recognizes the optional <code>tests</code> project sub-directory: this is where your integration
+tests will reside. Let's forget about this for now as we will <a href="project/../testing">discuss testing in details
+later</a>.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="running"><a class="header" href="#running">Running</a></h1>
+<blockquote>
+<p>This chapter builds on the toy project discussed in the <a href="run/../project">previous chapter</a>. It might
+be useful to be familiar with it, especially if this is your first time reading this.</p>
+<p>Also, all demos run with an unmodified <code>Matla.toml</code> project configuration file.</p>
+</blockquote>
+<p><br />
+</p>
+<p>Running matla on your matla-<code>init</code>ialized TLA+ project is easy enough:</p>
+<pre><code class="language-text">&gt; ls
+Matla.tla  Matla.toml  sw_0.cfg  sw_0.tla
+
+&gt; matla run
+system is safe
+
+&gt; ls
+Matla.tla  Matla.toml  sw_0.cfg  sw_0.tla  target
+</code></pre>
+<blockquote>
+<p>Matla project sources for this section available <a href="https://github.com/OCamlPro/matla/tree/latest/docs/manual/src/run/code/ok">here</a>.</p>
+</blockquote>
+<p>That's a bit underwhelming, though we did get a <em>safe</em> result. This means all invariants/properties
+were proved to hold by TLC (called through matla). There is a new <code>target</code> folder which is where
+all build-time/run-time artifact live. Feel free to check out its content if you're interested in
+peeking at how matla handles your sources and runs TLC on them. Also, note that you can clean your
+project directory with <code>matla clean</code>. This is effectively the same as <code>rm -rf target</code>. Note that
+<code>matla run</code> does not create or modify anything outside <code>target</code>, hence the simple cleanup
+procedure.</p>
+<p>Moving on, let's take a look at the <code>.cfg</code> file.</p>
+<pre><code class="language-text">INIT init
+NEXT next
+
+INVARIANTS
+    inv_cnt_pos
+    inv_reset
+</code></pre>
+<p>It turns out there was two invariants to check.</p>
+<pre><code class="language-text">&gt; bat -r 29:32 sw_0.tla
+───────┬────────────────────────────────────────────────────────────────────────
+       │ File: sw_0.tla
+───────┼────────────────────────────────────────────────────────────────────────
+  29   │ inv_cnt_pos == cnt &gt;= 0
+  30   │ inv_reset == reset =&gt; (cnt = 0)
+  31   │
+  32   │ cnt_leq_10 == cnt &lt;= 10
+───────┴────────────────────────────────────────────────────────────────────────
+</code></pre>
+<p>Both are expected to hold, which TLC confirms. Next, we'll add some falsifiable
+invariants/properties to see what happens.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="running-counterexample-traces"><a class="header" href="#running-counterexample-traces">Running: counterexample traces</a></h1>
+<blockquote>
+<p>Matla project sources for this section available <a href="https://github.com/OCamlPro/matla/tree/latest/docs/manual/src/run/code/cex">here</a> and <a href="https://github.com/OCamlPro/matla/tree/latest/docs/manual/src/run/code/temporal_cex">here (temporal version)</a>.</p>
+</blockquote>
+<p>Remember the candidate invariants from our running example:</p>
+<pre><code class="language-text">&gt; bat -r 29:32 sw_0.tla
+───────┬────────────────────────────────────────────────────────────────────────
+       │ File: sw_0.tla
+───────┼────────────────────────────────────────────────────────────────────────
+  29   │ inv_cnt_pos == cnt &gt;= 0
+  30   │ inv_reset == reset =&gt; (cnt = 0)
+  31   │
+  32   │ cnt_leq_10 == cnt &lt;= 10
+───────┴────────────────────────────────────────────────────────────────────────
+</code></pre>
+<p>Predicate <code>cnt_leq_10</code> does not hold: the stopwatch <em>can</em> count up to <code>59</code>, at which points it
+cannot increase anymore.</p>
+<p>Let's see what happens if we add it as a candidate invariant.</p>
+<pre><code class="language-text">&gt; bat sw_0.cfg
+───────┬────────────────────────────────────────────────────────────────────────
+       │ File: sw_0.cfg
+───────┼────────────────────────────────────────────────────────────────────────
+   1   │ INIT init
+   2   │ NEXT next
+   3   │
+   4   │ INVARIANTS
+   5   │     inv_cnt_pos
+   6   │     inv_reset
+   7   │     cnt_leq_10
+───────┴────────────────────────────────────────────────────────────────────────
+</code></pre>
+<p>This is a good opportunity to showcase matla's fancy, colored, UTF-8-art output so let's see what it
+looks like on a screenshot.</p>
+<p><img src="run/code/cnt_leq_10_cex.png" alt="cnt_leq_10 CEX" /></p>
+<p>For whatever reason, some people don't like command-line tools that have nice colored output. Note
+that matla has a <code>--color</code> option: <code>matla --color off run</code> or <code>matla -c off run</code> which disables
+matla's colored output.</p>
+<p>This toy example is still readable in colorless mode, but counterexample traces on projects
+manipulating tuples, bags, sets... values benefit greatly from syntax highlighting. Here is a very
+small part of a huge counterexample trace for a relatively big project:</p>
+<p><img src="run/code/fancy_cex.png" alt="big fancy CEX" /></p>
+<p>For readers wondering what a counterexample trace for a temporal property looks like, let's add the
+bogus temporal property that &quot;if <code>cnt = 1</code> at some point, then eventually <code>cnt = 10</code>&quot;. Which, if
+you followed, should not hold.</p>
+<pre><code class="language-text">&gt; bat -r 29:34 sw_0.tla
+───────┬────────────────────────────────────────────────────────────────────────
+       │ File: sw_0.tla
+───────┼────────────────────────────────────────────────────────────────────────
+  29   │ inv_cnt_pos == cnt &gt;= 0
+  30   │ inv_reset == reset =&gt; (cnt = 0)
+  31   │
+  32   │ cnt_leq_10 == cnt &lt;= 10
+  33   │
+  34   │ well_thats_gonna_fail == (cnt = 1) ~&gt; (cnt = 10)
+───────┴────────────────────────────────────────────────────────────────────────
+</code></pre>
+<p>Then we activate the property in the <code>.cfg</code>:</p>
+<pre><code class="language-text">INIT init
+NEXT next
+
+INVARIANTS
+    inv_cnt_pos
+    inv_reset
+
+PROPERTIES
+    well_thats_gonna_fail
+</code></pre>
+<p>And <em>voilà</em>:</p>
+<p><img src="run/code/temporal_cex.png" alt="temporal CEX" /></p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="userproject-configuration-and-command-line-arguments"><a class="header" href="#userproject-configuration-and-command-line-arguments">User/project configuration and command-line arguments</a></h1>
+<blockquote>
+<p>This chapter builds on the toy project discussed in the <a href="run/../project">previous chapter</a>. It might
+be useful to be familiar with it, especially if this is your first time reading this.</p>
+</blockquote>
+<p>As discussed in the <a href="run/../project">previous chapter</a>, matla has a three-level configuration
+hierarchy.</p>
+<ul>
+<li><strong>1)</strong> user configuration: <code>$HOME/.config/matla/matla.toml</code> (none in <code>--portable</code>/<code>-p</code> mode);</li>
+<li><strong>2)</strong> project configuration: <code>project/directory/Matla.toml</code>;</li>
+<li><strong>3)</strong> command-line arguments passed to <code>matla run</code> calls.</li>
+</ul>
+<p>Basically, for any configuration item, <code>matla run</code> uses the value set by the highest configuration
+level in this hierarchy; if none, then the item's internal default value is used.</p>
+</br>
+<p>Let's see this in action. Say that, as a user, you wish the TLC-level seed controling TLC's RNG to
+be random (matla's default is <code>auto</code>) and you want exhaustive counterexample traces (off by
+default).</p>
+<blockquote>
+<p><em>Exhaustive traces</em> display all state variables for all states. <em>Diff traces</em> on the other hand
+show the value of state variable <code>svar</code> in state <code>s_i</code> if either</p>
+<ul>
+<li><code>i = 0</code>,</li>
+<li><code>s_i</code> is the last state of the trace, or</li>
+<li><code>svar</code>'s value in <code>s_i</code> is different from its value in <code>s_{i-1}</code>.</li>
+</ul>
+</blockquote>
+<p>To set this configuration, modify your user configuration file:</p>
+<pre><code class="language-toml">&gt; bat ~/.config/matla/matla.toml
+──────┬────────────────────────────────────────────────────────────────────────
+      │ File: ~/.config/matla/matla.toml
+──────┼────────────────────────────────────────────────────────────────────────
+  1   │ [config]
+  2   │ tla2tools = '~/.config/matla/tla2tools.jar'
+  3   │
+  4   │ [tlc_cla]
+  5   │ seed = 'random'
+  6   │ diff_cexs = 'off'
+  7   │
+──────┴────────────────────────────────────────────────────────────────────────
+</code></pre>
+<p>Going back to our running stopwatch example, we launch <code>matla run</code> again but this time ask it to
+print its TLC-level configuration.</p>
+<pre><code class="language-text">&gt; exa
+Matla.tla  Matla.toml  sw_0.cfg  sw_0.tla  target
+
+&gt; bat sw_0.cfg
+───────┬────────────────────────────────────────────────────────────────────────
+       │ File: sw_0.cfg
+───────┼────────────────────────────────────────────────────────────────────────
+   1   │ INIT init
+   2   │ NEXT next
+   3   │
+   4   │ INVARIANTS
+   5   │     inv_cnt_pos
+   6   │     inv_reset
+───────┴────────────────────────────────────────────────────────────────────────
+
+&gt; bat Matla.toml
+───────┬────────────────────────────────────────────────────────────────────────
+       │ File: Matla.toml
+───────┼────────────────────────────────────────────────────────────────────────
+   1   │ [project]
+   2   │ # # Full configuration for TLC runtime arguments customization
+   3   │ #
+   4   │ # # Sets the number of workers, `0` or `auto` for `auto`.
+   5   │ # workers = 0 # &lt;int|'auto'&gt;#
+   6   │ # # If active, counterexample traces will only display state variables when they change.
+   7   │ # diff_cexs = 'on' # &lt;'on'|'off'|'true'|'false'&gt;#
+   8   │ # # Sets the seed when running TLC, random if none.
+   9   │ # seed = 0 # &lt;int|'random'&gt;#
+  10   │ # # If active, TLC will not output print statements.
+  11   │ # terse = 'off' # &lt;'on'|'off'|'true'|'false'&gt;#
+  12   │ # # Maximum size of the sets TLC is allowed to enumerate.
+  13   │ # max_set_size = 'default' # &lt;u64|'default'&gt;#
+  14   │ # # If active, TLC will check for (and fail on) deadlocks.
+  15   │ # check_deadlocks = 'on' # &lt;'on'|'off'|'true'|'false'&gt;#
+  16   │ # # If active, matla will present the callstack on errors, whenever possible.
+  17   │ # print_callstack = 'off' # &lt;'on'|'off'|'true'|'false'&gt;#
+  18   │ # # If active, matla will present time statistics during runs.
+  19   │ # timestats = 'off' # &lt;'on'|'off'|'true'|'false'&gt;
+───────┴────────────────────────────────────────────────────────────────────────
+</code></pre>
+<p><img src="run/code/matla_tlc_config_1.png" alt="Matla TLC config 1" /></p>
+<p>The configuration reported by matla is the expected one: everything is default since the project
+configuration and <code>matla run</code>'s command-line arguments do not specify anything.</p>
+</br>
+<p>Say now that the project leader wants to fix TLC's seed and fix the number of workers to <code>1</code>
+(matla's default is <code>'auto'</code>) to have (more) reproducible analyses output. So, they modify the
+project's configuration:</p>
+<pre><code class="language-text">&gt; bat Matla.toml
+───────┬────────────────────────────────────────────────────────────────────────
+       │ File: Matla.toml
+───────┼────────────────────────────────────────────────────────────────────────
+   1   │ [project]
+   2   │ seed = 0
+   3   │ workers = 1
+───────┴────────────────────────────────────────────────────────────────────────
+</code></pre>
+<p>Let's run matla again:</p>
+<p><img src="run/code/matla_tlc_config_2.png" alt="Matla TLC config 2" /></p>
+<p>As expected, the seed configuration item set by your user configuration is overwritten by the
+project's configuration, while your <code>diff_cexs</code> item is still the way you set it up. Item <code>workers</code>
+is not an override since you did not specify it in your user configuration file, it's just the
+setting specified by the project.</p>
+<br/>
+<p>Last, let's assume you're tired of your analyses taking forever because the project configuration
+forces TLC to use a single worker, causing you to hate your project leader. You thus override the
+<code>workers</code> item in you call to matla:</p>
+<p><img src="run/code/matla_tlc_config_3.png" alt="Matla TLC config 3" /></p>
+<p>Neat! You can now bypass your project leader's setup without them ever knowing about it.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="debugrelease-conditional-compilation"><a class="header" href="#debugrelease-conditional-compilation">Debug/release: conditional compilation</a></h1>
+<blockquote>
+<p>This chapter builds on the toy project discussed in the <a href="run/../project">previous chapter</a>. It might
+be useful to be familiar with it, especially if this is your first time reading this.</p>
+</blockquote>
+<p>Matla's conditional compilation is tied to the <a href="run/../project/layout.html#the-matla-module"><code>Matla</code> module discussed in the previous
+chapter</a>. If you remember, <code>Matla.tla</code> is generated by
+<code>matla init</code> among your project's sources.</p>
+<p>Just like we did back then, let's pretend this module only defines <code>assert</code> and none of its
+variants, all of which are handled the same by matla's conditional compilation anyway.</p>
+<pre><code class="language-text">&gt; cat Matla.tla
+---- MODULE Matla ----
+\* Matla helpers, mostly for assertions and debug/release conditional compilation.
+
+\* TLC!Assertions are built on top of the standard `TLC' module.
+LOCAL TLC == INSTANCE TLC
+---- MODULE dbg ----
+\* All functions in this module do nothing in `release' mode.
+
+\* Checks some predicate.
+assert(
+    \* Predicate that must be true.
+    pred,
+    \* Message issued when the predicate is false.
+    message
+) ==
+    TLC!Assert(pred, message)
+
+====
+\* End of module `dbg'.
+
+\* Contains debug-only functions.
+dbg == INSTANCE dbg
+
+\* Checks some predicate.
+\*
+\* Active in debug and release.
+assert(
+    \* Predicate that must be true.
+    pred,
+    \* Message issued when the predicate is false.
+    message
+) ==
+    TLC!Assert(pred, message)
+
+====
+\* End of module `Matla'.
+</code></pre>
+<p>The two versions, <code>Matla!assert</code> and <code>Matla!dbg!assert</code>, behave exactly the same in <code>debug</code> mode,
+which is <code>matla run</code>'s default mode. They differ in <code>release</code> mode however, activated by <code>matla run --release</code>, in that <code>Matla!dbg!assert</code>s will be compiled away (replaced by <code>TRUE</code>) while
+<code>Matla!assert</code>s will still cause TLC to check them, and fail if they do not hold.</p>
+</br>
+<p>Let's illustrate this on our running stopwatch project, sources available <a href="https://github.com/OCamlPro/matla/tree/latest/docs/manual/src/run/code/cond_comp_1">here</a>.</p>
+<pre><code class="language-text">&gt; exa
+Matla.tla  Matla.toml  sw_0.cfg  sw_0.tla  target
+
+&gt; bat sw_0.cfg
+───────┬────────────────────────────────────────────────────────────────────────
+       │ File: sw_0.cfg
+───────┼────────────────────────────────────────────────────────────────────────
+   1   │ INIT init
+   2   │ NEXT next
+   3   │
+   4   │ INVARIANTS
+   5   │     inv_cnt_pos
+   6   │     inv_reset
+───────┴────────────────────────────────────────────────────────────────────────
+</code></pre>
+<p>Module <code>sw_0</code> defines a <code>next</code> action:</p>
+<pre><code class="language-text">&gt; bat -r 17:27 sw_0.tla
+───────┬────────────────────────────────────────────────────────────────────────
+       │ File: sw_0.tla
+───────┼────────────────────────────────────────────────────────────────────────
+  17   │ next ==
+  18   │     bool(reset')
+  19   │     /\ bool(start_stop')
+  20   │     /\ (
+  21   │         IF start_stop' THEN counting' = ~counting
+  22   │         ELSE UNCHANGED counting
+  23   │     ) /\ (
+  24   │         IF reset' THEN cnt' = 0
+  25   │         ELSE IF counting' /\ cnt &lt; 59 THEN cnt' = cnt + 1
+  26   │         ELSE UNCHANGED cnt
+  27   │     )
+───────┴────────────────────────────────────────────────────────────────────────
+</code></pre>
+<p>Let's add a non-debug check that we expect to fail:</p>
+<pre><code class="language-text">&gt; bat -r 17:29 sw_0.tla
+───────┬────────────────────────────────────────────────────────────────────────
+       │ File: sw_0.tla
+───────┼────────────────────────────────────────────────────────────────────────
+  17 ~ │ LOCAL Matla == INSTANCE Matla
+  18   │ next ==
+  19   │     bool(reset')
+  20   │     /\ bool(start_stop')
+  21 + │     /\ Matla!assert(reset')
+  22   │     /\ (
+  23   │         IF start_stop' THEN counting' = ~counting
+  24   │         ELSE UNCHANGED counting
+  25   │     ) /\ (
+  26   │         IF reset' THEN cnt' = 0
+  27   │         ELSE IF counting' /\ cnt &lt; 59 THEN cnt' = cnt + 1
+  28   │         ELSE UNCHANGED cnt
+  29   │     )
+───────┴────────────────────────────────────────────────────────────────────────
+</code></pre>
+</br>
+<p>Running matla again, we get</p>
+<pre><code class="language-text">Error: an assertion failed with &quot;that's probably going to fail&quot;
+
+- triggered at
+  module sw_0, 20:8 → 20:60
+        |        vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+     20 |     /\ Matla!assert(reset', &quot;that's probably going to fail&quot;)
+        |
+
+- while exploring this trace
+  ┌───┐
+  │ 0 │ initial state
+  └─┬─┘
+    │ cnt       : 0
+    │ counting  : false
+    │ reset     : false
+    │ start_stop: false
+    ┴
+specification is unsafe
+</code></pre>
+</br>
+<p>Let's make sure <code>debug</code>/<code>release</code> modes work for <code>Matla!dbg!assert</code>. Project sources available
+<a href="https://github.com/OCamlPro/matla/tree/latest/docs/manual/src/run/code/cond_comp_2">here</a>.</p>
+<pre><code class="language-text">&gt; bat -r 17:29 sw_0.tla
+───────┬────────────────────────────────────────────────────────────────────────
+       │ File: sw_0.tla
+───────┼────────────────────────────────────────────────────────────────────────
+  17   │ LOCAL Matla == INSTANCE Matla
+  18   │ next ==
+  19   │     bool(reset')
+  20   │     /\ bool(start_stop')
+  21 ~ │     /\ Matla!dbg!assert(reset')
+  22   │     /\ (
+  23   │         IF start_stop' THEN counting' = ~counting
+  24   │         ELSE UNCHANGED counting
+  25   │     ) /\ (
+  26   │         IF reset' THEN cnt' = 0
+  27   │         ELSE IF counting' /\ cnt &lt; 59 THEN cnt' = cnt + 1
+  28   │         ELSE UNCHANGED cnt
+  29   │     )
+───────┴────────────────────────────────────────────────────────────────────────
+</code></pre>
+</br>
+<p>Running in <code>debug</code> mode (without <code>--release</code>) should still fail:</p>
+<pre><code class="language-text">&gt; matla run -w 1
+Error: an assertion failed with &quot;that's probably going to fail&quot;
+
+- triggered at
+  module sw_0, 20:8 → 20:64
+        |        vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+     20 |     /\ Matla!dbg!assert(reset', &quot;that's probably going to fail&quot;)
+        |
+
+- while exploring this trace
+  ┌───┐
+  │ 0 │ initial state
+  └─┬─┘
+    │ cnt       : 0
+    │ counting  : false
+    │ reset     : false
+    │ start_stop: false
+    ┴
+specification is unsafe
+</code></pre>
+</br>
+<p>Running in <code>release</code> mode should succeed however, since besides the assertion line <code>21</code> the
+specification is <em>safe</em>:</p>
+<pre><code class="language-text">&gt; matla run -w 1 --release
+specification is safe
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="testing"><a class="header" href="#testing">Testing</a></h1>
+<p>As developers, (doc/unit/integration/binary) testing is the main way we convince ourselves that our
+code does what we expect. At least until we all develop in <a href="https://leanprover.github.io">lean</a> or
+something similar.</p>
+<p>Formal methods in general and formal specification and verification in particular exist to provide
+strong, proof-based guarantees. It is thus crucial to make sure the specification makes sense and
+behaves the way we want it to so that successful analyses actually mean something.</p>
+<p>Currently, matla only supports <em>integration testing</em>. That is, tests that reside outside of your
+project sources in a separate <code>tests</code> folder. Documentation/unit testing on the other hand would
+typically live among your project's code. Matla does not support those just yet as, for now,
+matla's design makes sure that your matla-project's sources are compatible with TLC: you can just
+run TLC manually just like you would on any TLA+ codebase. This will probably change eventually,
+but for now this constraint makes it difficult to decide exactly what the best way to provide
+doc/unit testing is.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="plain-tests"><a class="header" href="#plain-tests">Plain tests</a></h1>
+<p>When we discussed <a href="testing/../project">project layout</a>, we briefly mentioned that matla recognizes an
+optional <code>tests</code> project sub-directory but postponed discussing it further. Until now, that is.</p>
+</br>
+<p>Let's focus on success-tests for now, meaning tests that are expected to compile and run without
+failing in any way: no assertion failure, dynamic type errors, invariant/property falsification,
+<em>etc.</em></p>
+<p>As you might expect, matla treats any test in <code>tests</code> as a success-test <em>by default</em>. We will see
+later how to handle tests that should fail (assertion, falsification...).</p>
+<p>A matla test is a regular TLA+ module <code>tests/my_test.tla</code> along with a <code>cfg</code> file
+<code>tests/my_test.cfg</code>. Any TLA+ module in <code>tests</code> has access to all modules and can freely refer to
+any/all of them as if they were in the same directory.</p>
+<blockquote>
+<p>⚠ Since tests and sources live in the same moral namespace, test modules <strong>cannot</strong> have the same
+name as one of the module in your project's sources.</p>
+<p>In fact, matla handles tests by creating a temporary directory in the project's <code>target</code> build
+directory and moving all your sources and the specific test you're running there before running
+TLC. Hence the potential name-clashes.</p>
+</blockquote>
+</br>
+<p>Let's create some tests in some matla project. As far as this section is concerned, it can be any
+project as long as it does not have <code>tests</code>, including an empty (but initialized) project. You can
+retrieve the full project <a href="https://github.com/OCamlPro/matla/tree/latest/docs/manual/src/testing/code/testing_1">here</a>.</p>
+<pre><code class="language-text">&gt; exa
+Matla.tla  Matla.toml  tests
+</code></pre>
+<p>We write a few tests</p>
+<pre><code class="language-text">&gt; exa --tree tests
+tests
+├── encoding_1.cfg
+├── encoding_1.tla
+├── encoding_2.cfg
+├── encoding_2.tla
+├── runtime_1.cfg
+└── runtime_1.tla
+</code></pre>
+<p>that <em>morally</em> test some (nonexistent, here) <code>encoding</code> and <code>runtime</code> module from our project. They
+can contain anything for this demo, as long as running does not fail. We decided to have all <code>tla</code>
+(<code>cfg</code>) contain the same code, respectively.</p>
+<pre><code class="language-text">\* tests/encoding_1.tla
+---- MODULE encoding_1 ----
+
+LOCAL INSTANCE Integers
+
+VARIABLES cnt
+
+init ==
+    cnt = 0
+    next ==
+    cnt' = (
+        IF cnt &lt; 10 THEN cnt + 1 ELSE cnt
+    )
+
+cnt_pos == cnt &gt;= 0
+====
+</code></pre>
+<pre><code class="language-text">\* tests/encoding_1.cfg
+INIT init
+NEXT next
+
+INVARIANTS
+    cnt_pos
+</code></pre>
+<p>To run the tests, we simply run <code>matla test</code>. Note that this will run tests in <code>debug</code> mode.
+Unsurprisingly, you can run them in <code>release</code> mode with <code>matla test --release</code>.</p>
+<pre><code class="language-text">&gt; matla test
+running 3 integration tests sequentially
+    test `/encoding_2`: success 😺
+    test `/encoding_1`: success 😺
+    test `/runtime_1`: success 😺
+integration tests: 3 successful of 3
+</code></pre>
+<blockquote>
+<p>⚠ If you have a <code>tests/my_test.tla</code> with no associated <code>cfg</code> file, matla will assume you wrote a
+<code>tla</code> for a test but forgot to write its <code>cfg</code> and produce an error.</p>
+<p>Well, actually, you <strong>can</strong> have modules with no <code>cfg</code>, called <em>&quot;test libraries&quot;</em>, but they
+require an annotation to let matla know you actually meant for this module to be a library used
+by other tests. We will see how <a href="testing/libs.html">shortly</a>.</p>
+</blockquote>
+</br>
+<p>Sometimes, especially when we write a specific test, we don't want to run all tests. You can run a
+single test by passing its module name (with or without <code>.tla</code>) to <code>matla test</code>.</p>
+<pre><code class="language-text">&gt; matla test encoding_1
+running 1 integration test
+    test `/encoding_1`: success 😺
+integration tests: 1 successful of 1
+</code></pre>
+</br>
+<p>But what about a family of tests? Say we modified the (nonexistent, here, again) <code>encoding</code> module
+from the project and only want to run test dealing with this module for instance; it turns out that
+<code>matla test</code> accepts more than a module name, it supports regular expressions too:</p>
+<pre><code class="language-text">&gt; matla test &quot;encoding_*&quot;
+running 2 integration tests sequentially
+    test `/encoding_2`: success 😺
+    test `/encoding_1`: success 😺
+integration tests: 2 successful of 2
+</code></pre>
+<p>While different from a semantic analysis checking which test references which module, you can
+accomplish the same result assuming you have some discipline in your test naming convention.</p>
+<p><strong>⚠ Pro tip</strong>: matla does not look for a full match of the regular expression, just a partial one.
+Hence, you can also obtain the result from above by running the following.</p>
+<pre><code class="language-text">&gt; matla test encoding
+running 2 integration tests sequentially
+    test `/encoding_2`: success 😺
+    test `/encoding_1`: success 😺
+integration tests: 2 successful of 2
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="test-configuration-and-expected-outcome"><a class="header" href="#test-configuration-and-expected-outcome">Test configuration and expected outcome</a></h1>
+<p>The ability to write tests that will be checked for success is not enough, in practice many tests
+check that something bad is rejected. Matla does support this, in fact you can specify that you
+expect pretty much any kind of outcome TLC can produce.</p>
+<p>Matla lets you specify this by parsing an optional TOML test specification before the module header
+of your test <code>tla</code> file. As you may know, TLC ignores everything before the module header (and after
+the module footer), which allows us to write our test specification without making the file illegal
+for TLC.</p>
+</br>
+<p>We did not do anything of the sort in the previous section because we wrote tests expected to
+succeed, which is what matla assumes if we omit the test specification TOML header. Let's make the
+default specification explicit: it takes the form of a <code>[test]</code> TOML section containing a few
+fields. Full project available <a href="https://github.com/OCamlPro/matla/tree/latest/docs/manual/src/testing/code/testing_2">here</a>.</p>
+<pre><code class="language-text">\* tests/encoding_1.tla
+[test]
+only_in = none
+expected = success
+
+---- MODULE encoding_1 ----
+
+LOCAL INSTANCE Integers
+
+VARIABLES cnt
+
+init ==
+    cnt = 0
+    next ==
+    cnt' = (
+        IF cnt &lt; 10 THEN cnt + 1 ELSE cnt
+    )
+
+cnt_pos == cnt &gt;= 0
+====
+</code></pre>
+<p>The first field is <code>only_in</code>, which specifies whether the test should only run in <code>debug</code> mode or
+<code>release</code> mode. If you recall, <code>matla test</code> runs tests in <code>debug</code> mode while <code>matla test --release</code>
+runs them in <code>release</code> mode. Here, <code>none</code> means that the test should run in both debug and release,
+which is the same as omitting the <code>only_in</code> field completely. Besides <code>none</code>, <code>only_in</code>'s value can
+be <code>debug</code> or <code>release</code>.</p>
+<p>This can be useful to make sure that your type-checking assertions are present and correct. Such
+checks are typically <code>Matla!dbg!assert</code>ions, which would fail if included in a <code>matla test --release</code> run as debug assertions are compiled away in release mode. Conversely, some of your
+tests might be expensive enough that you don't want type-checking assertions to be active to save
+time, so you would have `only_in = .</p>
+</br>
+<p>Next is the last, more interesting field: <code>expected</code>. Note that its value can optionally be quoted,
+<em>e.g.</em> <code>&quot;success&quot;</code>. Matla supports a relatively wide range of values. It's not necessary for you to
+remember them all; instead, we advise you write a definitely illegal value such as <code>help me</code>. This
+will cause <code>matla test</code> to fail parsing the value and produce a detailed explanation.</p>
+<pre><code class="language-text">\* tests/encoding_2.tla
+[test]
+expected = help me
+
+---- MODULE encoding_2 ----
+
+LOCAL INSTANCE Integers
+
+VARIABLES cnt
+
+init ==
+    cnt = 0
+    next ==
+    cnt' = (
+        IF cnt &lt; 10 THEN cnt + 1 ELSE cnt
+    )
+
+cnt_pos == cnt &gt;= 0
+====
+</code></pre>
+<p>The explanation actually goes over most of what we saw in this section:</p>
+<pre><code class="language-text">&gt; matla test encoding_2
+Error: failure during test
+
+Caused by:
+    0: failed to load integration tests
+    1: illegal test configuration in file `./tests/encoding_2.tla` at 2:12
+    2:       |
+           2 | expected = help me
+             |            ^~~~~~ expected one of &quot;Error&quot;, &quot;Failure&quot;, &quot;Violation&quot;, &quot;error&quot;, &quot;failure&quot;, &quot;success&quot;, &quot;violation&quot;
+    3: Integration tests live in the optional `tests` directory of your project. A test is a *runnable* TLA
+       module, *i.e.* a TLA file and its companion `.cfg` file.
+       TLA integration test files must start with a test *configuration*, before the `----` module header.
+       The configuration is written in toml and looks as follows, **inside** the code block.
+       ```toml
+       [test]
+       only_in = &lt;'none'|'debug'|'release'&gt;
+       expected = &lt;result&gt;
+       ```
+       where `only_in` is optional and `none` by default; `expected` is also
+       optional and is `success` by default. Its value must be one of
+       - `success`
+       - `violation(assumption)`
+       - `violation(deadlock)`
+       - `violation(safety)`
+       - `violation(liveness)`
+       - `violation(assert)`
+       - `failure(spec)`
+       - `failure(safety)`
+       - `failure(liveness)`
+       - `error(spec_parse)`
+       - `error(config_parse)`
+       - `error(statespace_too_big)`
+       - `error(system)`
+</code></pre>
+<p>It seems to us that matla does a pretty good job at explaining how to write the test's
+configuration and the <code>expected</code> field in particular, so we elaborate no further.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="test-libraries"><a class="header" href="#test-libraries">Test libraries</a></h1>
+<p>It can be quite useful to factor test-related boilerplate code for
+<a href="https://en.wikipedia.org/wiki/Don%27t_repeat_yourself">DRY</a>'s sake. Moving this common code to
+your project's sources is an option, but it's not a desirable one. It mixes testing and actual
+sources in a way that's just dirty and unhygienic.</p>
+<p>We discussed previously that matla treats <code>tla</code> files in <code>tests</code> that have no associated <code>cfg</code> file
+as mistakes: tests you wrote the <code>tla</code> for, but forgot the <code>cfg</code> because you got distracted by a
+hilarious cat meme 🙀.</p>
+</br>
+<p>Still, that's exactly what matla's <em>test libraries</em> are, with the caveat that they <strong>must</strong> have a
+TOML test library configuration header. Just like tests, this header must be before the TLA+ module
+opener. Unlike tests that specify their configuration with a <code>[test]</code> TOML section containing a few
+fields, test libraries are configured with a <code>[lib]</code> TOML section with no fields, at least
+<strong>currently</strong>.</p>
+<p>As matla runs your tests, there is no real difference between a test <code>[lib]</code>rary and a module from
+your project's actual sources. Your tests see and can refer to both of them transparently. The only
+difference is the <code>[lib]</code> header, which TLC ignores, and the fact that test libraries are located
+in <code>tests</code>. Hygiene all the way!</p>
+</br>
+<p>Let's illustrate this on the example from the previous section. We factor out the initialization of
+the <code>cnt</code> state variable in all of our tests. You can retrieve the full project
+<a href="https://github.com/OCamlPro/matla/tree/latest/docs/manual/src/testing/code/testing_3">here</a>.</p>
+<pre><code class="language-text">\* tests/cnt_init.tla
+\* does **not** have a `.cfg` file
+[lib]
+
+---- MODULE cnt_init ----
+
+doit(cnt) == cnt = 0
+
+====
+</code></pre>
+<pre><code class="language-text">\* tests/encoding_1.tla
+[test]
+expected = success
+
+---- MODULE encoding_1 ----
+
+LOCAL INSTANCE Integers
+LOCAL cnt_init == INSTANCE cnt_init
+
+VARIABLES cnt
+
+init ==
+    cnt_init!doit(cnt)
+next ==
+    cnt' = (
+        IF cnt &lt; 10 THEN cnt + 1 ELSE cnt
+    )
+
+cnt_pos == cnt &gt;= 0
+====
+</code></pre>
+<p>Our two other tests, <code>encoding_2</code> and <code>runtime_1</code>, have exactly the same content as <code>encoding_1</code>.
+Matla does not even blink and handles everything gracefully as usual:</p>
+<pre><code class="language-text">&gt; matla test
+running 3 integration tests sequentially
+    test `/encoding_2`: success 😺
+    test `/encoding_1`: success 😺
+    test `/runtime_1`: success 😺
+integration tests: 3 successful of 3
+</code></pre>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+            </nav>
+
+        </div>
+
+        <script type="text/javascript">
+            window.playground_copyable = true;
+        </script>
+        <script src="elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="searcher.js" type="text/javascript" charset="utf-8"></script>
+        <script src="clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="book.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- Custom JS scripts -->
+        <script type="text/javascript">
+        window.addEventListener('load', function() {
+            window.setTimeout(window.print, 100);
+        });
+        </script>
+    </body>
+</html>

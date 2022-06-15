@@ -1,0 +1,20 @@
+> matla run -w 1
+# 10
+Error: an assertion failed with "that's probably going to fail"
+
+- triggered at
+  module sw_0, 20:8 → 20:64
+        |        vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+     20 |     /\ Matla!dbg!assert(reset', "that's probably going to fail")
+        |
+
+- while exploring this trace
+  ┌───┐
+  │ 0 │ initial state
+  └─┬─┘
+    │ cnt       : 0
+    │ counting  : false
+    │ reset     : false
+    │ start_stop: false
+    ┴
+specification is unsafe
