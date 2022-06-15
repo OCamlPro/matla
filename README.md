@@ -44,7 +44,7 @@ Matla is not on [crates.io], you can still install it with `cargo` which you get
     ...
     ```
 
-- Install from local clone (**recommended** as long as the repo is private):
+- Install from local clone:
 
     ```text
     > git clone https://github.com/OCamlPro/matla
