@@ -18,6 +18,7 @@ jobs:
       - name: Setup mdBook
         uses: jontze/action-mdbook@v1
         with:
+          token: ${{secrets.GITHUB_TOKEN}}
           use-linkcheck: true
       - name: Show mdbook version
         run: mdbook --version
@@ -31,20 +32,22 @@ jobs:
 
       - name: Test User Manual 🔧
         run: |
+          cd docs/manual
           mdbook test
 
       - name: Build User Manual 🔧
         run: |
-          mdbook build -d ../../target/docs/manual docs/manual
+          cd docs/manual
+          mdbook build -d ../../target/docs/manual
       
       - name: Setup Pages
         run: |
-          mkdir -p target/deploy
-          mv target/docs/manual/html target/deploy/manual
-          cp README.md target/deploy/index.md
+          mkdir -p target/pages
+          mv target/docs/manual/html target/pages/manual
+          cp README.md target/pages/index.md
 
       - name: Deploy 🚀
         uses: JamesIves/github-pages-deploy-action@v4.3.3
         with:
           branch: gh-pages
-          folder: targets/deploy
+          folder: target/pages
