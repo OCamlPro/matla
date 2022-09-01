@@ -63,6 +63,15 @@ impl IsMode for Trace {
                 Control::keep(self).ok_some()
             }
 
+            // Lasso temporal cex.
+            Msg::Cex(TlcCex::TlcBackToState { index }) => {
+                out.handle_message(&msg, log::Level::Trace);
+                let idx =
+                    self.cex.idx_of(*index)?;
+                self.cex = self.cex.shape(cex::Shape::Loop(idx));
+                Control::keep(self).ok_some()
+            }
+
             // State of a trace.
             Msg::Cex(TlcCex::TlcTraceState { index, state }) => {
                 out.handle_message(&msg, log::Level::Trace);

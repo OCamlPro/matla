@@ -146,6 +146,21 @@ impl Cex {
         Ok(self)
     }
 
+    /// Yields the [`idx::State`] corresponding to `usize`-index.
+    ///
+    /// Fails if the input index is illegal.
+    pub fn idx_of(&self, i: usize) -> Res<idx::State> {
+        if i < self.states.len() {
+            Ok(i.into())
+        } else {
+            Err(anyhow!(
+                "illegal state index `{}`, CEX only contains `{}` state(s)",
+                i,
+                self.states.len()
+            ))
+        }
+    }
+
     /// Sets the shape of a cex.
     pub fn shape(mut self, shape: Shape) -> Self {
         self.shape = shape;

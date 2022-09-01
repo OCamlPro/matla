@@ -418,7 +418,16 @@ code_enums! {
     /// TLC countexample error codes.
     pub enum TlcCex {
         codes {
-            TlcBackToState = (2122, "[tlc cex] back to state"),
+            TlcBackToState = (2122, "[tlc cex] back to state") {
+                index: usize,
+            } => |contents| {
+                let mut lines = contents.only_plain_str_slices();
+                let line = lines.next().ok_or_else(|| anyhow!("expected at least one line"))?
+                    .with_context(|| "expected back-to-state line")?;
+                let index = tlc::parse::back_to_state(line)
+                    .with_context(|| anyhow!("failed to parse back-to-state content"))?;
+                Ok(Self::TlcBackToState { index })
+            },
             /// Originally called `TLC_STATE_PRINT3`.
             ///
             /// This error code accompanies the final state in a liveness property counter-example

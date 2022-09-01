@@ -465,7 +465,7 @@ impl TraceState {
 }
 lazy_static! {
     static ref STATE_HEADER_STATE_REGEX: Regex =
-        Regex::new(r"^(\d+):\s+<Action line (\d+), col (\d+) to line (\d+), col (\d+) of module ([a-zA-Z][a-zA-Z0-9_]*)>$").unwrap();
+        Regex::new(r"^(\d+):\s+<Action line (\d+), col (\d+) to line (\d+), col (\d+) of module ([a-zA-Z_][a-zA-Z0-9_]*)>$").unwrap();
 }
 impl TraceState {
     fn parse_state_header(s: &str) -> Option<(usize, Span, String)> {
