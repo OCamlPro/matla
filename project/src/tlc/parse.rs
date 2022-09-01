@@ -618,6 +618,7 @@ peg::parser! {
         = val:cex_plain_value() { val.into() }
         / "null" { cex::Value::Null }
 
+        /// Returns the state index, and the state info if not initial.
         pub rule state_info() -> (usize, Option<cex::StateInfo>)
         = n:usize() _ ":" _ "<" _ info:(
             "Initial" _ "predicate" { None }
@@ -630,6 +631,14 @@ peg::parser! {
             }
         ) _ ">" {
             (n, info)
+        }
+
+        pub rule back_to_state() -> usize
+        = "Back" _ "to" _ "state" _ n:usize() _ ":" _ [_]* {
+            n
+        }
+        / n:usize() _ ":" _ "Back" _ "to" _ "state" _ [_]* {
+            n
         }
 
         pub rule cex_ident_value() -> (&'input str, cex::Value)
