@@ -15,4 +15,4 @@ toml = "^0.5"
 which = "^4.2"
 
 [dev-dependencies]
-path-slash = "^0.1"
+path-slash = "^0.2"
