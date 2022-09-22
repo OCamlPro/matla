@@ -62,9 +62,9 @@ peg::parser! {
             }
         } / expected!("`usize` value")
 
-        rule dq_string() -> &'input str
+        pub rule dq_string() -> &'input str
         = quiet! {
-            "\"" content:$(("\\\"" / [^'"'])*) "\"" { content }
+            "\"" content:$(("\\\"" / "\\\\" / [^'"'])*) "\"" { content }
         } / expected!("double-quoted string")
 
         rule file_or_dir() -> &'input str
@@ -705,5 +705,21 @@ peg::parser! {
         = _ _idx:usize() _ "." _ span:file_pos_span() _ {
             span
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    #[test]
+    fn dq_string() {
+        let input = r#""IN""#;
+        let res = super::dq_string(input).unwrap();
+        assert_eq!(res, "IN");
+        let input = r#""\in""#;
+        let res = super::dq_string(input).unwrap();
+        assert_eq!(res, "\\in");
+        let input = r#""\\""#;
+        let res = super::dq_string(input).unwrap();
+        assert_eq!(res, "\\\\");
     }
 }
