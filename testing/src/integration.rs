@@ -254,7 +254,7 @@ impl Test {
         let tlc = project.run_tlc_async(&mut tlc_out)?;
 
         let outcome = tlc.run()?;
-        let project::tlc::ProcessOutcome { code, status } = outcome.process;
+        let ProcessOutcome { code, status } = outcome.process;
         let expected = self.conf.expected().to_exit_code().code();
 
         if status.as_ref().map(|c| c.code()) == Some(expected) {
@@ -679,7 +679,7 @@ pub struct TlcOutputHandler {
     pub lines: Vec<String>,
     pub cexs: Vec<cex::Cex>,
     pub errors: Vec<project::tlc::TlcError>,
-    pub outcome: Option<tlc::RunOutcome>,
+    pub outcome: Option<RunOutcome>,
 }
 impl TlcOutputHandler {
     /// Constructor.
@@ -699,7 +699,7 @@ impl project::tlc::Out for TlcOutputHandler {
     fn handle_message(&mut self, msg: &project::tlc::msg::Msg, _log_level: log::Level) {
         self.lines.extend(msg.lines().into_iter().map(String::from))
     }
-    fn handle_outcome(&mut self, outcome: tlc::RunOutcome) {
+    fn handle_outcome(&mut self, outcome: RunOutcome) {
         self.outcome = Some(outcome)
     }
     fn handle_error(&mut self, error: impl Into<tlc::TlcError>) -> Res<()> {

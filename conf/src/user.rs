@@ -37,7 +37,8 @@ pub fn try_write<Out>(action: impl FnOnce(&mut Conf) -> Out) -> Res<Out> {
 /// # use conf::user::conf_path;
 /// use path_slash::PathExt;
 ///
-/// let conf_path = conf_path().unwrap().to_slash_lossy();
+/// let conf_path = conf_path().unwrap();
+/// let conf_path = conf_path.to_slash_lossy();
 /// # println!("conf_path: {}", conf_path);
 /// assert!(
 ///     conf_path.ends_with(&format!(
@@ -64,7 +65,8 @@ pub fn conf_path() -> Res<io::PathBuf> {
 /// # use conf::user::toml_path;
 /// use path_slash::PathExt;
 ///
-/// let toml_path = toml_path().unwrap().to_slash_lossy();
+/// let toml_path = toml_path().unwrap();
+/// let toml_path = toml_path.to_slash_lossy();
 /// # println!("toml_path: {}", toml_path);
 /// assert!(
 ///     toml_path.ends_with(&format!(
@@ -163,7 +165,8 @@ pub const TLA2TOOLS_FILE: &str = crate::toolchain::TLA2TOOLS_DEFAULT_NAME;
 /// # use conf::user::tla2tools_jar_path;
 /// use path_slash::PathExt;
 ///
-/// let tla2tools_jar_path = tla2tools_jar_path().unwrap().to_slash_lossy();
+/// let tla2tools_jar_path = tla2tools_jar_path().unwrap();
+/// let tla2tools_jar_path = tla2tools_jar_path.to_slash_lossy();
 /// # println!("tla2tools_jar_path: {}", tla2tools_jar_path);
 /// assert!(
 ///     tla2tools_jar_path.ends_with(&format!(

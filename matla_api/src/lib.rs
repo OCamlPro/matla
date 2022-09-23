@@ -28,7 +28,7 @@ pub mod prelude {
     pub use base::*;
     pub use cex;
     pub use conf;
-    pub use project;
+    pub use project::{self, tlc::outcome::*};
     pub use testing;
 
     pub use crate::{cla, mode};

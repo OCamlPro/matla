@@ -266,7 +266,6 @@ impl FileSpan {
     ) -> Res<Vec<String>> {
         // println!("FilePos::loading `{}`", self.file);
         if self.pos == self.end {
-            println!("ping 1");
             return self.start.pretty(load, start_text);
         }
         let mut buf = String::with_capacity(1007);

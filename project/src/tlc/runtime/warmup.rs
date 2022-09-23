@@ -30,4 +30,24 @@ impl IsMode for WarmUp {
             _ => Control::ignored(self).ok_some(),
         }
     }
+    fn handle_error(
+        self,
+        out: &mut impl tlc::Out,
+        msg: &tlc::msg::Msg,
+        err: &code::Err,
+        reported: bool,
+    ) -> Res<Option<Control>> {
+        let reported = if !reported {
+            match err.clone().into_tlc_error(msg.subs.clone()) {
+                Ok(err) => {
+                    out.handle_error(err)?;
+                    true
+                }
+                _ => false,
+            }
+        } else {
+            false
+        };
+        IsMode::handle_error(self, out, msg, err, reported)
+    }
 }

@@ -10,7 +10,7 @@ pub mod prelude {
 
     pub use crate::{
         idx,
-        tlc::{self, TlcRun},
+        tlc::{self, outcome::*, TlcRun},
         FullProject, ModuleOrTop, Project, SourceProject, TargetProject,
     };
 }
