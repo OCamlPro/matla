@@ -48,6 +48,10 @@ impl IsMode for WarmUp {
         } else {
             false
         };
-        IsMode::handle_error(self, out, msg, err, reported)
+        if reported {
+            Control::keep(self).ok_some()
+        } else {
+            Control::keep_and(self, error::Error::new(msg.clone(), reported)).ok_some()
+        }
     }
 }

@@ -62,9 +62,9 @@ peg::parser! {
             }
         } / expected!("`usize` value")
 
-        rule dq_string() -> &'input str
+        pub rule dq_string() -> &'input str
         = quiet! {
-            "\"" content:$(("\\\"" / [^'"'])*) "\"" { content }
+            "\"" content:$(("\\\"" / "\\\\" / [^'"'])*) "\"" { content }
         } / expected!("double-quoted string")
 
         rule file_or_dir() -> &'input str
@@ -447,21 +447,21 @@ peg::parser! {
         /// Returns an *okay* flag which is false on errors.
         pub rule parsing(mode: &mut tlc::runtime::Parsing)
         = _ module:parsing_file() _ {
-            mode.current_file = Some(module);
+            mode.set_current_file(module);
         }
         / _ module: processing_file() _ {
-            mode.current_file = Some(module);
+            mode.set_current_file(module);
         }
         / _ "***" _ "Parse" _ "Error" _ "***" _ {
-            mode.error_msg = Some(String::new());
+            mode.set_error_msg(String::new());
         }
         / _ err:$("Lexical" _ "error" _ [_]*) {
-            mode.error_msg = Some(err.into())
+            mode.set_error_msg(err)
         }
         / _ "Fatal" _ "errors" _ "while" _ "parsing" _ "TLA+" _ "spec"
         _ "in" _ "file" _ module:ident() {
-            mode.current_file = Some(ModuleOrTop::Module(module.into()));
-            mode.error_msg = Some(String::new());
+            mode.set_current_file(ModuleOrTop::Module(module.into()));
+            mode.set_error_msg(String::new());
         }
 
 
@@ -705,5 +705,21 @@ peg::parser! {
         = _ _idx:usize() _ "." _ span:file_pos_span() _ {
             span
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    #[test]
+    fn dq_string() {
+        let input = r#""IN""#;
+        let res = super::dq_string(input).unwrap();
+        assert_eq!(res, "IN");
+        let input = r#""\in""#;
+        let res = super::dq_string(input).unwrap();
+        assert_eq!(res, "\\in");
+        let input = r#""\\""#;
+        let res = super::dq_string(input).unwrap();
+        assert_eq!(res, "\\\\");
     }
 }

@@ -4,6 +4,7 @@ prelude!();
 
 #[derive(Debug, Clone)]
 pub enum TlcError {
+    NoJavaRuntime,
     Parse(ParseError),
     Semantic(SemanticError),
     Lexical(LexicalError),
@@ -41,6 +42,16 @@ impl TlcError {
     /// Pretty, multi-line representation.
     pub fn pretty(&self, project: &crate::FullProject, styles: &conf::Styles) -> Res<Vec<String>> {
         match self {
+            Self::NoJavaRuntime => Ok(vec![
+                format!(
+                    "The operation couldn’t be completed. Unable to locate a {}.",
+                    styles.bad.paint("Java Runtime")
+                ),
+                format!(
+                    "Please visit {} for information on installing Java.",
+                    styles.uline.paint("http://www.java.com")
+                ),
+            ]),
             Self::Parse(e) => e.pretty(project, styles),
             Self::Semantic(e) => e.pretty(project, styles),
             Self::Lexical(e) => e.pretty(project, styles),
@@ -82,9 +93,12 @@ impl TlcError {
         match self {
             Self::Warning(_) => true,
             Self::List { errs, .. } => errs.iter().all(Self::is_warning),
-            Self::Parse(_) | Self::Semantic(_) | Self::Lexical(_) | Self::Run(_) | Self::Tlc(_) => {
-                false
-            }
+            Self::NoJavaRuntime
+            | Self::Parse(_)
+            | Self::Semantic(_)
+            | Self::Lexical(_)
+            | Self::Run(_)
+            | Self::Tlc(_) => false,
         }
     }
 
@@ -104,6 +118,9 @@ impl TlcError {
             Self::Lexical(e) => e.to_outcome(),
             Self::Run(e) => e.to_outcome(),
             Self::Tlc(e) => e.to_outcome(),
+            Self::NoJavaRuntime => Some(FailedOutcome::Plain(
+                "unable to locate a Java Runtime".into(),
+            )),
             Self::Warning(_) => None,
             Self::List { errs, .. } => {
                 for err in errs {
@@ -185,7 +202,14 @@ impl TlcError {
             Self::Semantic(e) => Self::Semantic(e.force_module(module)),
             Self::Lexical(e) => Self::Lexical(e.force_module(module)),
             Self::Warning(e) => Self::Warning(e),
-            Self::List { .. } | Self::Run(_) | Self::Tlc(_) => self,
+            Self::List { during, errs } => {
+                let errs = errs
+                    .into_iter()
+                    .map(|err| err.force_module(module.clone()))
+                    .collect();
+                Self::List { during, errs }
+            }
+            Self::NoJavaRuntime | Self::Run(_) | Self::Tlc(_) => self,
         }
     }
 

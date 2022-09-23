@@ -5,4 +5,5 @@ Error: on file `./top.tla`
   This usually means your module opener/closer is ill-formed or inexistent.
   Make sure your module starts with `---- MODULE file_name_without_tla_extension ----`
   and ends with `====`
+
 specification is ill-defined

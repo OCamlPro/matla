@@ -262,6 +262,36 @@ impl Runtime {
             })
     }
 
+    /// Fold over all the errors in the mode stack.
+    pub fn tlc_error_fold<Acc>(
+        &self,
+        mut fold: impl FnMut(Acc, tlc::err::TlcError, bool) -> Res<Acc>,
+        init: Acc,
+    ) -> Res<Acc> {
+        self.error_fold(
+            |acc, err| {
+                let (err, reported) = err.clone().into_error()?;
+                fold(acc, err, reported)
+            },
+            init,
+        )
+    }
+
+    /// Fold over all the errors in the mode stack.
+    pub fn error_fold<Acc>(
+        &self,
+        mut fold: impl FnMut(Acc, &error::Error) -> Res<Acc>,
+        mut init: Acc,
+    ) -> Res<Acc> {
+        for frame in self.stack.iter().rev() {
+            match &frame.mode {
+                TlcMode::Error(err) => init = fold(init, err)?,
+                _ => (),
+            }
+        }
+        Ok(init)
+    }
+
     /// Handles a message.
     pub fn handle(
         &mut self,

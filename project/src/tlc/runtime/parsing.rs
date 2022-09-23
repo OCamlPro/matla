@@ -4,8 +4,9 @@ use super::*;
 
 #[derive(Debug, Clone)]
 pub struct Parsing {
-    pub current_file: Option<ModuleOrTop>,
-    pub error_msg: Option<String>,
+    current_file: Option<ModuleOrTop>,
+    error_msg: Option<String>,
+    has_errors: bool,
 }
 
 impl Parsing {
@@ -14,14 +15,26 @@ impl Parsing {
         Self {
             current_file: None,
             error_msg: None,
+            has_errors: false,
         }
     }
 }
 
 impl Parsing {
+    pub fn set_current_file(&mut self, m: impl Into<ModuleOrTop>) {
+        self.current_file = Some(m.into());
+    }
+    pub fn set_error_msg(&mut self, m: impl Into<String>) {
+        self.has_errors = true;
+        self.error_msg = Some(m.into());
+    }
+    pub fn has_errors(&self) -> bool {
+        self.has_errors || self.error_msg.is_some()
+    }
+
     /// Reports an error (if any) to `out`.
-    pub fn try_report_error(&self, out: &mut impl tlc::Out) -> Res<bool> {
-        if let Some(error) = self.error_msg.as_ref() {
+    pub fn try_report_error(&mut self, out: &mut impl tlc::Out) -> Res<bool> {
+        if let Some(error) = std::mem::replace(&mut self.error_msg, None) {
             let top = ModuleOrTop::TopTla;
             let module = self.current_file.as_ref().unwrap_or(&top);
             let error = tlc::err::TlcError::new_parse(&error, module)?;
@@ -52,7 +65,7 @@ impl IsMode for Parsing {
         let line = match (msg.subs.len(), lines.next()) {
             (1, Some(line @ "Semantic errors:")) => {
                 if self.error_msg.is_none() {
-                    self.error_msg = Some("".into())
+                    self.set_error_msg("");
                 }
                 line
             }
@@ -76,20 +89,28 @@ impl IsMode for Parsing {
             }
         }
 
-        Control::Keep(self.into(), None).ok_some()
+        Control::keep(self).ok_some()
     }
     fn handle_error(
-        self,
+        mut self,
         out: &mut impl tlc::Out,
         msg: &tlc::msg::Msg,
-        err: &code::Err,
-        _reported: bool,
+        _err: &code::Err,
+        reported: bool,
     ) -> Res<Option<Control>> {
-        self.try_report_error(out)?;
-        tlc::runtime::IsMode::handle_error(self, out, msg, err, true)
+        let reported = if !reported {
+            self.try_report_error(out)?
+        } else {
+            reported
+        };
+        if reported {
+            Control::keep(self).ok_some()
+        } else {
+            Control::keep_and(self, error::Error::new(msg.clone(), reported)).ok_some()
+        }
     }
     fn handle_msg(
-        self,
+        mut self,
         out: &mut impl tlc::Out,
         msg: &tlc::msg::Msg,
         tlc_msg: &code::Msg,

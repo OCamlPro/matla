@@ -15,4 +15,5 @@ Error: an assertion failed with "b1 is not TRUE"
     │ b1: false
     │ b2: true
     ┴
+
 specification is unsafe
