@@ -520,6 +520,7 @@ impl<'a> project::tlc::Out for TlcOutputHandler<'a> {
         for line in pretty {
             eprintln!("{}", line)
         }
+        eprintln!();
         Ok(())
     }
 

@@ -627,6 +627,14 @@ code_enums! {
         codes {
             CheckFailedToCheck = (3000, "failed to check"),
             CheckCouldNotReadTrace = (3001, "could not read trace"),
+            /// Custom error, triggered when no java runtime is found.
+            ///
+            /// Code is `1_000_000` to avoid clashes, though we **do check** for clashes.
+            ///
+            /// Note that there are custom [`TopMsg::parse_start`] and [`TopMsg::parse_end`]
+            /// behavior for this error since it's not a real TLC-level error, and thus cannot be
+            /// parsed with TLC message code.
+            NoJavaRuntime = (1_000_000, "unable to locate java runtime"),
         }
         subs {
             Param(ParamErr),
@@ -788,6 +796,11 @@ impl TopMsg {
     /// Parses a message start.
     pub fn parse_start(s: impl AsRef<str>) -> Res<Option<(isize, usize)>> {
         let s = s.as_ref();
+
+        if s.contains("Unable to locate a Java Runtime") {
+            return Ok(Some((Err::NoJavaRuntime.code(), 0)));
+        }
+
         let mut captures = START_REGEX.captures_iter(s);
 
         let capture = if let Some(c) = captures.next() {
@@ -829,6 +842,11 @@ impl TopMsg {
     /// Parses a message end.
     pub fn parse_end(s: impl AsRef<str>) -> Res<Option<isize>> {
         let s = s.as_ref();
+
+        if s.contains("on installing Java") {
+            return Ok(Some(Err::NoJavaRuntime.code()));
+        }
+
         let mut captures = END_REGEX.captures_iter(s);
 
         let capture = if let Some(c) = captures.next() {
@@ -934,6 +952,7 @@ impl Err {
                 )
                 .into())
             }
+            Self::NoJavaRuntime => Ok(tlc::TlcError::NoJavaRuntime),
             Self::Param(e) => e.into_tlc_error(subs),
             Self::Parser(e) => e.into_tlc_error(subs),
             Self::Weird(e) => e.into_tlc_error(subs),

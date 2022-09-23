@@ -37,4 +37,5 @@ Error: lexical error on file `./top.tla` (49:24)
      48 |     \* inputs, must be booleans (this is not type-checking)
      49 |     is_bool(reset')
         |                    ^~~~~~ error reported here
+
 specification is ill-defined

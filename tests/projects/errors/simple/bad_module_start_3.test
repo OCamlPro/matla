@@ -15,4 +15,5 @@ Error: parse error on file `./top.tla`
         |
       1 | ---- MODULE top ---
         | ^~~~~~ module definition start
+
 specification is ill-defined
