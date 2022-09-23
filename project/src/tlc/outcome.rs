@@ -47,6 +47,13 @@ pub enum RunOutcome {
     Failure(FailedOutcome),
 }
 impl RunOutcome {
+    /// True if success.
+    pub fn is_success(&self) -> bool {
+        match self {
+            Self::Success => true,
+            Self::Failure(_) => false,
+        }
+    }
     /// True if deadlock failure.
     pub fn is_deadlock(&self) -> bool {
         *self == Self::Failure(FailedOutcome::Deadlock)

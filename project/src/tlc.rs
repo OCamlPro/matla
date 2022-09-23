@@ -128,6 +128,25 @@ impl<O: Out> TlcRun<O> {
             }
         }
         let runtime = chrono::Utc::now() - start_time;
+        {
+            let error_count = self.runtime.tlc_error_fold(
+                |cnt, err, reported| {
+                    if !reported {
+                        self.out_handler.handle_error(err)?;
+                    }
+                    Ok(cnt + 1)
+                },
+                0,
+            )?;
+            let overwrite =
+                error_count > 0 && outcome.as_ref().map(|o| o.is_success()).unwrap_or(true);
+            if overwrite {
+                outcome = Some(RunOutcome::Failure(FailedOutcome::Plain(format!(
+                    "{} error(s) occurred",
+                    error_count,
+                ))))
+            }
+        }
         let res = if outcome.is_some() {
             self.tlc.destroy()
         } else {
