@@ -5,6 +5,7 @@ prelude!();
 pub mod code;
 pub mod err;
 pub mod msg;
+pub mod outcome;
 pub mod parse;
 pub mod runtime;
 pub mod warn;
@@ -12,301 +13,6 @@ pub mod warn;
 // pub mod initial_states;
 
 pub use err::TlcError;
-
-/// A failed outcome of a TLC run.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum FailedOutcome {
-    /// A parse error with a description.
-    ParseError,
-    /// An assertion failure with a description.
-    AssertFailed,
-    /// Deadlock.
-    Deadlock,
-    /// Unsafe.
-    Unsafe,
-    /// Plain error.
-    Plain(String),
-}
-impl FailedOutcome {
-    /// True if [`Self::Deadlock`].
-    pub fn is_deadlock(&self) -> bool {
-        *self == Self::Deadlock
-    }
-}
-implem! {
-    for FailedOutcome {
-        Display {
-            |&self, fmt| {
-                match self {
-                    Self::ParseError => "parse error".fmt(fmt),
-                    Self::AssertFailed => "assertion failure".fmt(fmt),
-                    Self::Deadlock => "deadlock".fmt(fmt),
-                    Self::Unsafe => "unsafe".fmt(fmt),
-                    Self::Plain(s) => write!(fmt, "<{}>", s),
-                }
-            }
-        }
-    }
-}
-
-/// Outcome of a TLC run.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum RunOutcome {
-    /// Success.
-    Success,
-    /// Failure.
-    Failure(FailedOutcome),
-}
-impl RunOutcome {
-    /// True if deadlock failure.
-    pub fn is_deadlock(&self) -> bool {
-        *self == Self::Failure(FailedOutcome::Deadlock)
-    }
-
-    /// Turns itself into a failure.
-    pub fn into_failure(self) -> Res<FailedOutcome> {
-        match self {
-            Self::Success => bail!("expected run to fail but got a successful outcome"),
-            Self::Failure(outcome) => Ok(outcome),
-        }
-    }
-
-    /// Map over failures, if any.
-    pub fn map_failure<Out>(&self, action: impl FnOnce(&FailedOutcome) -> Out) -> Option<Out> {
-        match self {
-            Self::Success => None,
-            Self::Failure(f) => Some(action(f)),
-        }
-    }
-
-    /// Updates itself with a new outcome.
-    ///
-    /// If `self` is [`Self::Success`], replaces itself by `that`. Otherwise, does nothing.
-    pub fn update(&mut self, that: &Self) {
-        match self {
-            Self::Success => {
-                *self = that.clone();
-            }
-            Self::Failure(_) => (),
-        }
-    }
-}
-implem! {
-    for RunOutcome {
-        Display {
-            |&self, fmt| match self {
-                Self::Success => "success".fmt(fmt),
-                Self::Failure(failed) => failed.fmt(fmt),
-            }
-        }
-    }
-}
-
-/// Outcome of a TLC process.
-#[derive(Debug, Clone)]
-pub struct ProcessOutcome {
-    /// Exit code.
-    pub code: i32,
-    /// TLC exit status.
-    pub status: Option<code::Exit>,
-}
-impl ProcessOutcome {
-    /// Constructor.
-    pub fn new(code: i32) -> Res<Self> {
-        let status = code::Exit::from_code(code, &msg::Elms::EMPTY)?;
-        Ok(Self { code, status })
-    }
-}
-implem! {
-    for ProcessOutcome {
-        Display {
-            |&self, fmt| {
-                if let Some(status) = self.status.as_ref() {
-                    write!(fmt, "{} ({})", status, self.code)
-                } else {
-                    write!(fmt, "unknown TLC exit code {}", self.code)
-                }
-            }
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct Outcome {
-    /// Process outcome.
-    pub process: ProcessOutcome,
-    /// Run outcome.
-    pub run: Option<RunOutcome>,
-    /// Runtime.
-    pub runtime: chrono::Duration,
-    /// Outcome.
-    pub errors: Vec<err::TlcError>,
-    /// Start time.
-    pub start_time: chrono::DateTime<chrono::Utc>,
-}
-impl Outcome {
-    /// Constructor.
-    pub fn new(
-        process: ProcessOutcome,
-        run: Option<RunOutcome>,
-        runtime: chrono::Duration,
-        start_time: chrono::DateTime<chrono::Utc>,
-    ) -> Self {
-        Self {
-            process,
-            run,
-            runtime,
-            start_time,
-            errors: vec![],
-        }
-    }
-
-    /// Produces a concise outcome for the final report.
-    pub fn to_concise(&self) -> ConciseOutcome {
-        use code::Exit;
-        match (&self.run, &self.process.status) {
-            (Some(RunOutcome::Success), _) | (None, Some(Exit::Success)) => ConciseOutcome::Success,
-
-            (Some(RunOutcome::Failure(FailedOutcome::Unsafe)), _)
-            | (Some(RunOutcome::Failure(FailedOutcome::Deadlock)), _)
-            | (None, Some(Exit::Violation(_))) => ConciseOutcome::Unsafe,
-
-            (Some(RunOutcome::Failure(FailedOutcome::ParseError)), _)
-            | (None, Some(Exit::Failure(_))) => ConciseOutcome::IllDefined,
-
-            (Some(RunOutcome::Failure(FailedOutcome::AssertFailed)), _) => {
-                ConciseOutcome::AssertFailed
-            }
-            (Some(RunOutcome::Failure(FailedOutcome::Plain(err))), _) => {
-                ConciseOutcome::Error(Some(err))
-            }
-            (None, Some(Exit::Error(_) | Exit::PlainError)) => ConciseOutcome::Error(None),
-
-            (None, None) => ConciseOutcome::Unknown,
-        }
-    }
-}
-implem! {
-    for Outcome {
-        Deref<Target = Vec<err::TlcError>> {
-            |&self| &self.errors,
-            |&mut self| &mut self.errors,
-        }
-    }
-}
-
-/// Concise version of a run outcome.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ConciseOutcome<'msg> {
-    Success,
-    Unsafe,
-    IllDefined,
-    Error(Option<&'msg str>),
-    AssertFailed,
-    Unknown,
-}
-implem! {
-    impl('msg) for ConciseOutcome<'msg> {
-        Display { |&self, fmt| match self {
-            Self::Success => "success".fmt(fmt),
-            Self::Unsafe => "unsafe".fmt(fmt),
-            Self::IllDefined => "ill-defined".fmt(fmt),
-            Self::Error(None) => "error".fmt(fmt),
-            Self::Error(Some(msg)) => write!(fmt, "error[{}]", msg),
-            Self::AssertFailed => "assert failed".fmt(fmt),
-            Self::Unknown => "<unknown>".fmt(fmt),
-        } }
-    }
-}
-impl<'msg> ConciseOutcome<'msg> {
-    /// Description.
-    pub fn desc(&self) -> String {
-        match self {
-            Self::Error(Some(msg)) => format!("error: {}", msg),
-            _ => conf::exit_code::desc(self.to_exit_code())
-                .expect("[fatal] exit codes and outcomes are desync-ed")
-                .into(),
-        }
-    }
-
-    /// Fails if `self` and `reference` are different, presenting the latter as expected.
-    pub fn expecting(self, reference: Self) -> Res<()> {
-        if self == reference {
-            Ok(())
-        } else {
-            bail!(
-                "expected `{}` outcome, got `{}`",
-                reference.desc(),
-                self.desc()
-            )
-        }
-    }
-
-    /// True on [`Self::Success`].
-    pub fn is_success(self) -> bool {
-        self == Self::Success
-    }
-    /// True on [`Self::Unsafe`].
-    pub fn is_unsafe(self) -> bool {
-        self == Self::Unsafe
-    }
-    /// True on [`Self::IllDefined`].
-    pub fn is_ill_defined(self) -> bool {
-        self == Self::IllDefined
-    }
-    /// True on [`Self::Error`].
-    pub fn is_error(self) -> bool {
-        if let Self::Error(_) = self {
-            true
-        } else {
-            false
-        }
-    }
-    /// True on [`Self::AssertFailed`].
-    pub fn is_assert_failed(self) -> bool {
-        self == Self::AssertFailed
-    }
-    /// True on [`Self::Unknown`].
-    pub fn is_unknown(self) -> bool {
-        self == Self::Unknown
-    }
-
-    /// Matla exit code associated with this outcome.
-    pub fn to_exit_code(self) -> i32 {
-        use conf::exit_code::*;
-        match self {
-            Self::Success => SAFE,
-            Self::Unsafe => UNSAFE,
-            Self::IllDefined => ILL_DEFINED,
-            Self::Error(_) => ERROR,
-            Self::AssertFailed => ASSERT_FAILED,
-            Self::Unknown => UNKNOWN,
-        }
-    }
-    /// Constructor from an exit code, mostly used for internal tests.
-    pub fn from_exit_code(code: i32) -> Res<Self> {
-        use conf::exit_code::*;
-        let slf = if code == SAFE {
-            Self::Success
-        } else if code == UNSAFE {
-            Self::Unsafe
-        } else if code == ILL_DEFINED {
-            Self::IllDefined
-        } else if code == ERROR {
-            Self::Error(None)
-        } else if code == ASSERT_FAILED {
-            Self::AssertFailed
-        } else if code == UNKNOWN {
-            Self::Unknown
-        } else {
-            bail!(
-                "matla exit code `{}` does not exist and has no semantics",
-                code
-            )
-        };
-        Ok(slf)
-    }
-}
 
 /// Output handler trait.
 ///
@@ -319,7 +25,7 @@ pub trait Out {
     fn handle_message(&mut self, msg: &msg::Msg, log_level: log::Level);
 
     /// Handles a mode outcome.
-    fn handle_outcome(&mut self, outcome: tlc::RunOutcome);
+    fn handle_outcome(&mut self, outcome: RunOutcome);
 
     /// Handles an error.
     fn handle_error(&mut self, error: impl Into<tlc::err::TlcError>) -> Res<()>;
@@ -331,7 +37,7 @@ impl<'a, T: Out> Out for &'a mut T {
     fn handle_message(&mut self, msg: &msg::Msg, log_level: log::Level) {
         (*self).handle_message(msg, log_level)
     }
-    fn handle_outcome(&mut self, outcome: tlc::RunOutcome) {
+    fn handle_outcome(&mut self, outcome: RunOutcome) {
         (*self).handle_outcome(outcome)
     }
     fn handle_error(&mut self, error: impl Into<tlc::err::TlcError>) -> Res<()> {
@@ -343,7 +49,7 @@ impl<'a, T: Out> Out for &'a mut T {
 }
 impl Out for () {
     fn handle_message(&mut self, _msg: &msg::Msg, _log_level: log::Level) {}
-    fn handle_outcome(&mut self, _outcome: tlc::RunOutcome) {}
+    fn handle_outcome(&mut self, _outcome: RunOutcome) {}
     fn handle_error(&mut self, _outcome: impl Into<tlc::err::TlcError>) -> Res<()> {
         Ok(())
     }
@@ -409,11 +115,10 @@ impl<O: Out> TlcRun<O> {
                 };
             }
 
-            let msg = match try_break!(self.tlc.next()) {
-                Some(msg) => msg,
-                None => {
-                    break 'doit;
-                }
+            let msg = if let Some(msg) = try_break!(self.tlc.next()) {
+                msg
+            } else {
+                break 'doit;
             };
             let maybe_done = try_break!(self.runtime.handle(&mut self.out_handler, &msg));
             if let Some(nu_outcome) = maybe_done {

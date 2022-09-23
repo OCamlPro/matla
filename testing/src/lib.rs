@@ -8,7 +8,10 @@ use project::FullProject;
 pub mod prelude {
     pub use base::*;
     pub use conf;
-    pub use project::{self, tlc};
+    pub use project::{
+        self,
+        tlc::{self, outcome::*},
+    };
 
     pub use crate::{doc, err::*, integration, Filter, TestRes};
 }
@@ -78,11 +81,11 @@ pub struct Test<Kind> {
     /// Test full project.
     pub project: FullProject,
     /// Expected outcome.
-    pub expected: tlc::RunOutcome,
+    pub expected: RunOutcome,
 }
 impl<Src> Test<Src> {
     /// Constructor.
-    pub fn new(kind: Src, project: FullProject, expected: tlc::RunOutcome) -> Self {
+    pub fn new(kind: Src, project: FullProject, expected: RunOutcome) -> Self {
         Self {
             kind,
             project,

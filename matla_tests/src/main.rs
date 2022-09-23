@@ -15,7 +15,7 @@ pub mod prelude {
 
     pub use base::*;
     pub use conf;
-    pub use project::{self, tlc::ConciseOutcome};
+    pub use project::{self, tlc::outcome::ConciseOutcome};
 
     pub use crate::run;
 

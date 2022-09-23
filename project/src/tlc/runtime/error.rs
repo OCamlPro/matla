@@ -55,6 +55,7 @@ impl IsMode for Error {
     fn desc(&self) -> &'static str {
         "error"
     }
+
     fn handle_error(
         mut self,
         _out: &mut impl tlc::Out,
@@ -97,6 +98,7 @@ impl IsMode for Error {
     }
     fn integrate(mut self, _out: &mut impl tlc::Out, outcome: ModeOutcome) -> Res<Control> {
         match outcome.kind {
+            ModeOutcomeKind::Unknown => Control::keep(self).ok(),
             ModeOutcomeKind::Success { .. } => Control::keep(self).ok(),
             ModeOutcomeKind::Cex(cex) => {
                 if self.trace.is_some() {
