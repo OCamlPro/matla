@@ -378,7 +378,7 @@ impl Run {
             println!("done in {}", style.bold.paint(runtime));
         }
 
-        use project::tlc::ConciseOutcome as Out;
+        use ConciseOutcome as Out;
         match concise {
             Out::Success => {
                 println!("specification is {}", style.good.paint("safe"));
@@ -448,8 +448,7 @@ impl<'a> TlcOutputHandler<'a> {
     }
 }
 impl<'a> project::tlc::Out for TlcOutputHandler<'a> {
-    fn handle_outcome(&mut self, outcome: project::tlc::RunOutcome) {
-        use project::tlc::RunOutcome;
+    fn handle_outcome(&mut self, outcome: RunOutcome) {
         match outcome {
             RunOutcome::Success => (),
             RunOutcome::Failure(_) => (),

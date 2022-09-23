@@ -16,6 +16,7 @@ impl IsMode for Analysis {
     fn desc(&self) -> &'static str {
         "analysis"
     }
+
     fn handle_msg(
         self,
         out: &mut impl tlc::Out,
@@ -59,6 +60,7 @@ impl IsMode for Analysis {
     }
     fn integrate(mut self, out: &mut impl tlc::Out, outcome: ModeOutcome) -> Res<Control> {
         match outcome.kind {
+            ModeOutcomeKind::Unknown => Control::keep(self).ok(),
             ModeOutcomeKind::Success { safe } => {
                 if !safe {
                     self.safe = false
