@@ -10,8 +10,6 @@ pub mod parse;
 pub mod runtime;
 pub mod warn;
 
-// pub mod initial_states;
-
 pub use err::TlcError;
 
 /// Output handler trait.
