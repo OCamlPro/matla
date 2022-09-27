@@ -1,7 +1,18 @@
 //! Defines the matla TLA module.
 //!
-//! This module exposes convenience helpers, mostly for assertions. It has a `debug` and a `release`
-//! version, the latter of which deactivates all debug checks for efficiency.
+//! This file generates the `Matla.tla` matla module. It contains helpers for writing assertions,
+//! intended in particular for type-checking. Helpers at the root of the `Matla` TLA module do
+//! exactly what they are supposed to do. Helpers in `Matla!dbg` however only do something in
+//! *debug* mode, *i.e.* they are the same as their `Matla!assert*` counterpart.
+//!
+//! In *release*, all helpers in `Matla!dbg` are compiled away, generally meaning that their
+//! definition is replaced by `TRUE`.
+//!
+//! There are two main use-cases:
+//! - project initialization, where we generate the debug version in the users' sources;
+//! - project run (*run* or *test*), where we generate the version specified at command-line by the
+//!   user. The actual file generated will live in the `target` build folders, users are not
+//!   supposed to see it unless they actively go and open it.
 
 prelude!();
 
