@@ -416,9 +416,9 @@ pub struct TlcHandler {
     /// Child channel.
     com: ChildCmdCom,
     /// Message from `stdout` under construction.
-    stdout_msg: Vec<(isize, tlc::msg::Elms)>,
+    stdout_msg: Vec<(Code, tlc::msg::Elms)>,
     /// Message from `stderr` under construction.
-    stderr_msg: Vec<(isize, tlc::msg::Elms)>,
+    stderr_msg: Vec<(Code, tlc::msg::Elms)>,
     /// Join handle for the child process.
     handle: thread::JoinHandle<Res<io::ExitStatus>>,
     /// Errors that happened during the run.
@@ -532,7 +532,7 @@ impl TlcHandler {
     }
 
     /// Creates a message to construct.
-    fn new_msg(&mut self, code: isize, from_stderr: bool) -> Res<()> {
+    fn new_msg(&mut self, code: Code, from_stderr: bool) -> Res<()> {
         let target = if from_stderr {
             &mut self.stderr_msg
         } else {
@@ -543,7 +543,7 @@ impl TlcHandler {
     }
 
     /// Finalizes a message under construction.
-    fn end_msg(&mut self, code: isize, from_stderr: bool) -> Res<Option<Msg>> {
+    fn end_msg(&mut self, code: Code, from_stderr: bool) -> Res<Option<Msg>> {
         let target = if from_stderr {
             &mut self.stderr_msg
         } else {
