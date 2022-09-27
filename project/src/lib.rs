@@ -71,6 +71,12 @@
 //! compare with the expected outcome. If they coincide it just reports that the test succeeded,
 //! otherwise it reports everything that happened and how it differs from the expected outcome.
 //!
+//! # Sub-modules
+//!
+//! - [`matla`]: generates the debug/release version of the `Matla` TLA module, which contains
+//!   conditionally-compiled assertion helpers;
+//! - [`tlc`]: handles TLC runs.
+//!
 //! [`runtime`]: tlc::runtime (runtime module)
 //! [`Control`]: tlc::runtime::control::Control (Control type)
 
