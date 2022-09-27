@@ -1,4 +1,40 @@
 //! Handles TLC runs.
+//!
+//! The [`Runtime`] handles the actual run. Doing so is a bit tricky. Basically TLC goes through a
+//! few run-modes such as *parsing*, *lexical analysis*, *parsing*, *semantic analysis*, *actual
+//! analysis*...
+//!
+//! # Modes
+//!
+//! Also, importantly, there is an *error* mode. Errors can be complex to parse and feature several
+//! lines of content and sub-messages.
+//!
+//! To organize things a bit, we reflect (an abstract version of) these modes in the sub-modules. In
+//! (rough) temporal order when TLC runs: [`warmup`], [`parsing`], [`starting`], [`initial_states`],
+//! [`analysis`], [`success`].
+//!
+//! That's on no-error runs at least. At any point, we can enter the [`error`] mode to parse an
+//! error. On a counterexample, we enter the [`trace`] mode which handles cex parsing.
+//!
+//! All modes must implement the [`IsMode`] trait. Modes are enumerated by the [`TlcMode`] enum.
+//!
+//! # Mode stack
+//!
+//! When parsing an error, we generally lack context to actually construct the user-facing
+//! version. So the [`Runtime`] maintains a stack of modes; when [`error`] produces an error, it
+//! goes up the stack to be augmented with the relevant info so that it makes sense for users.
+//!
+//! The [`Runtime`]'s stack is there for another reason: messages can be entangled. We can have
+//! [`parsing`] or [`analysis`] messages while parsing an error for instance. So, when the runtime
+//! needs to handle a message, it goes through the mode stack until one that can handle the message
+//! is found.
+//!
+//! # Controling the runtime
+//!
+//! Whenever a mode is queried for handling a message, an error, or anything at all, **ownership of
+//! the mode** is transferred to the query. The query then results in a [`control::Control`]
+//! instruction for the runtime. This can cause an early-exit, put the mode back in the stack,
+//! replace it, put it back but also push a new mode...
 
 prelude!();
 
@@ -22,11 +58,18 @@ pub use self::{
     parsing::Parsing, starting::Starting, success::Success, trace::Trace, warmup::WarmUp,
 };
 
+/// Trait implemented by runtime modes.
+///
+/// Many of the functions in this trait have default implementations. Be careful to override the
+/// appropriate ones when implementing `IsMode`.
 pub trait IsMode: Sized
 where
     TlcMode: From<Self>,
 {
+    /// A **concise** (ideally one-word) description of the mode.
     fn desc(&self) -> &'static str;
+
+    /// Turns itself in a `TlcMode`.
     fn into_mode(self) -> TlcMode {
         self.into()
     }
@@ -39,6 +82,7 @@ where
     //     }
     // }
 
+    /// Handles a Tlc-level message.
     fn handle(self, out: &mut impl tlc::Out, msg: &tlc::msg::Msg) -> Res<Option<Control>> {
         log::debug!("currently in {} mode", self.desc());
         log::debug!("- handling {:?}", msg);
@@ -48,10 +92,14 @@ where
             None => self.handle_plain(out, msg),
         }
     }
+
+    /// Handles a plain-text message.
     fn handle_plain(self, out: &mut impl tlc::Out, msg: &tlc::msg::Msg) -> Res<Option<Control>> {
         out.handle_message(msg, log::Level::Info);
         Ok(Some(Control::keep(self)))
     }
+
+    /// Handles a top-level message.
     fn handle_top(
         self,
         out: &mut impl tlc::Out,
@@ -63,6 +111,8 @@ where
             code::TopMsg::Err(err) => self.handle_error(out, msg, err, false),
         }
     }
+
+    /// Handles an error.
     fn handle_error(
         self,
         _out: &mut impl tlc::Out,
@@ -72,6 +122,8 @@ where
     ) -> Res<Option<Control>> {
         Control::keep_and(self, Error::new(msg.clone(), reported)).ok_some()
     }
+
+    /// Handles a normal TLC message.
     fn handle_msg(
         self,
         out: &mut impl tlc::Out,
@@ -81,6 +133,10 @@ where
     where
         Self: Sized;
 
+    /// Integrates an outcome for a sub-mode into itself.
+    ///
+    /// Can augment the outcome and issue an early-exit [`Control`] instruction, take the outcome
+    /// into account and keep going, or whatever it wants.
     fn integrate(self, _out: &mut impl tlc::Out, mut outcome: ModeOutcome) -> Res<Control> {
         let desc = outcome.kind.desc();
         outcome.push(format!(
@@ -91,17 +147,30 @@ where
         Control::finalize(outcome).ok()
     }
 
+    /// Reports an unexpected message.
     fn report_unexpected(&self, msg: &tlc::msg::Msg) {
         utils::report_unexpected(self.desc(), msg)
     }
+
+    /// Extracts the TLC-message of a [`tlc::msg::Msg`], failing if none.
     fn code_of<'msg>(&self, msg: &'msg tlc::msg::Msg) -> Res<&'msg tlc::code::Msg> {
         utils::code_of(self.desc(), msg)
     }
+
+    /// Reports unexpected sub-messages of a message.
     fn report_subs(&self, msg: &tlc::msg::Msg) {
         utils::report_subs(self.desc(), msg)
     }
 }
 
+/// This macro automatically builds the [`TlcMode`].
+///
+/// Its input is pretty much exactly the enum definition, but the *"variants"* are just runtime
+/// modes. For instance, writing `Mode` as a variant produces the variant `Mode(Mode)`.
+///
+/// - implements `From<Mode>` for all modes;
+/// - implements `From<code::Err>`;
+/// - lifts [`IsMode::desc`], [`IsMode::handle`] and [`IsMode::integrate`].
 macro_rules! build_top {
 	(
 		$(#[$top_meta:meta])*
@@ -150,6 +219,14 @@ macro_rules! build_top {
 		    	}
 		    }
 		}
+
+        implem! {
+            for $top_id {
+                From<code::Err> { |err| match err {
+                    _ => todo!(),
+                } }
+            }
+        }
 	};
 }
 
@@ -170,15 +247,7 @@ build_top! {
     }
 }
 
-implem! {
-    for TlcMode {
-        From<code::Err> { |err| match err {
-            _ => todo!(),
-        } }
-    }
-}
-
-/// A frame of the [`Runtime`] stack.
+/// A frame of the [`Runtime`] stack, which is just a [`TlcMode`] with some stats.
 #[derive(Debug, Clone)]
 pub struct Frame {
     /// TLC mode of the frame.
@@ -199,7 +268,7 @@ impl Frame {
             start: time::Instant::now(),
         }
     }
-    /// Runtime of the frame's mode.
+    /// Runtime (until now) of the frame's mode.
     pub fn runtime(&self) -> time::Duration {
         time::Instant::now() - self.start
     }
@@ -210,9 +279,11 @@ pub struct Runtime {
     /// Stack of modes.
     pub stack: SVec<[Frame; 8]>,
     /// Stack memory, used when popping the stack to find someone able to handle a message.
+    ///
+    /// This should **always** be empty outside of [`Runtime::handle`].
     pub stack_mem: SVec<[Frame; 8]>,
-    /// Updated on failures.
-    pub outcome: tlc::RunOutcome,
+    /// Updated on errors / cex-s.
+    pub outcome: RunOutcome,
 }
 impl Runtime {
     /// Constructor.
@@ -238,10 +309,12 @@ impl Runtime {
         res
     }
 
-    #[allow(dead_code)]
-    fn finalize_stack_mem(&mut self) -> Option<ModeOutcome> {
-        todo!("`stack_mem` finalization")
-    }
+    // #[allow(dead_code)]
+    // fn finalize_stack_mem(&mut self) -> Option<ModeOutcome> {
+    //     todo!("`stack_mem` finalization")
+    // }
+
+    /// Puts back `self.stack_mem` on `self.stack` in the right order.
     fn apply_stack_mem(&mut self) {
         self.stack.extend(self.stack_mem.drain(0..).rev())
     }
@@ -293,6 +366,8 @@ impl Runtime {
     }
 
     /// Handles a message.
+    ///
+    /// Goes up the mode stack to find someone that can handle the message using `out`.
     pub fn handle(
         &mut self,
         out: &mut impl tlc::Out,
