@@ -1,4 +1,32 @@
 //! Handles TLC runs.
+//!
+//! Sub-modules are discussed [below](#sub-modules).
+//!
+//! # `Out`
+//!
+//! Trait `Out` specifies how the top-level caller wants *TLC messages*, [`RunOutcome`]s,
+//! [`TlcError`]s and [`Cex`]s to be handled. For instance, the top-level matla **run** mode has a
+//! manager which is very different from the one used in **testing** mode.
+//!
+//! # `TlcRun`
+//!
+//! Aggregates
+//!
+//! # Sub-Modules
+//!
+//! - [`parse`]: parsers for TLC (`code`) messages;
+//! - [`code`]: hierarchy of TLC raw messages, each have a specific message *code*;
+//! - [`msg`]: builds a higher-level notion of message on top of `code`, along with a [`TlcHandler`]
+//!   which wraps TLC's output and parses its messages;
+//! - [`err`]: error types, from low-level to top-level;
+//! - [`warn`]: warning type, separate from errors;
+//! - [`outcome`]: all outcome types: (`runtime`) *mode*, raw analysis outcome, failed outcome, top
+//!   analysis outcome;
+//! - [`runtime`]: handles the logics of TLC runs, in particular runtime modes (warmup, parsing,
+//!   semantic analysis...).
+//!
+//! [`TlcHandler`]: msg::TlcHandler (Message handler structure)
+//! [`Cex`]: cex::Cex (Counterexample structure)
 
 prelude!();
 

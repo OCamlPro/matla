@@ -6,7 +6,7 @@ use super::*;
 pub struct Error {
     /// Error message.
     pub msgs: SVec<[tlc::msg::Msg; 8]>,
-    /// CEX, not constructed by this mode but by [`tlc::Trace`].
+    /// CEX, if any.
     pub trace: Option<cex::Cex>,
     /// If true, the error has already been reported.
     pub reported: bool,
