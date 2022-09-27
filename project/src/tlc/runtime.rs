@@ -6,16 +6,16 @@ use tlc::code;
 
 pub mod utils;
 
-mod control;
+pub mod control;
 
-mod analysis;
-mod error;
-mod initial_states;
-mod parsing;
-mod starting;
-mod success;
-mod trace;
-mod warmup;
+pub mod analysis;
+pub mod error;
+pub mod initial_states;
+pub mod parsing;
+pub mod starting;
+pub mod success;
+pub mod trace;
+pub mod warmup;
 
 pub use self::{
     analysis::Analysis, control::Control, error::Error, initial_states::InitialStates,
