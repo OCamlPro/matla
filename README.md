@@ -60,7 +60,6 @@ Matla is not on [crates.io], you can still install it with `cargo` which you get
 Make sure everything works:
 
 ```
-> matla help
 matla 0.1.0-alpha1
 
 A project manager for TLA+ projects.
@@ -69,11 +68,11 @@ USAGE:
     lmatla [OPTIONS] [SUBCOMMAND]
 
 OPTIONS:
-    -c, --color <true|on|false|off>    (de)activates colored output [default: on]
+    -c, --color <true|on|false|off>    (De)activates colored output. [default: on]
     -h, --help                         Print help information
-        --log <LOGGER_KEY>             makes the internal logger more verbose, mostly for debugging
+        --log <LOG_LEVEL>              Makes the internal logger more verbose, mostly for debugging.
                                        [default: warn] [possible values: warn, info, debug, trace]
-    -p, --portable                     infer toolchain from environment, load no user configuration
+    -p, --portable                     Infer toolchain from environment, load no user configuration.
         --path <DIR>                   Path to a matla project directory [default: .]
     -V, --version                      Print version information
 
@@ -87,7 +86,6 @@ SUBCOMMANDS:
     tlc          Calls TLC with some arguments.
     uninstall    Deletes your matla user directory (cannot be undone).
     update       Updates the `tla2tools` jar in the matla user directory.
-
 ```
 
 

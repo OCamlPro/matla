@@ -76,9 +76,10 @@ pub mod utils {
             app.arg(
                 clap::Arg::new(LOGGER_KEY)
                     .long("log")
+                    .value_name("LOG_LEVEL")
                     .default_value(LOGGER_KEY_DEFAULT)
                     .value_parser(possible_values)
-                    .help("makes the internal logger more verbose, mostly for debugging"),
+                    .help("Makes the internal logger more verbose, mostly for debugging."),
             )
         }
 
@@ -228,12 +229,12 @@ pub mod top {
             clap::Arg::new(PORTABLE_KEY)
                 .short('p')
                 .long("portable")
-                .help("infer toolchain from environment, load no user configuration"),
+                .help("Infer toolchain from environment, load no user configuration."),
             project_path_arg(),
             clap::Arg::new(COLOR_KEY)
                 .short('c')
                 .long("color")
-                .help("(de)activates colored output")
+                .help("(De)activates colored output.")
                 .takes_value(true)
                 .default_value(COLOR_KEY_DEFAULT)
                 .value_name(cla::utils::BOOL_VALUES)
