@@ -18,8 +18,13 @@ mod requires_clap {
     prelude!();
 
     /// Generates all the subcommands for all the modes.
-    pub fn all_subcommands<'a>() -> [clap::Command<'static>; 8] {
-        [
+    pub fn all_subcommands() -> [clap::Command<'static>; 8] {
+        macro_rules! augmented_array {
+            ( $($sub:expr),* $(,)? ) => (
+                [$( cla::utils::sub_cmd::augment($sub), )*]
+            );
+        }
+        augmented_array!(
             super::clean::cla::subcommand(),
             super::init::cla::subcommand(),
             super::run::cla::subcommand(),
@@ -28,7 +33,7 @@ mod requires_clap {
             super::tlc::cla::subcommand(),
             super::uninstall::cla::subcommand(),
             super::update::cla::subcommand(),
-        ]
+        )
     }
 
     /// Wraps the result of `action()` in a `Some(_)`.
@@ -41,96 +46,93 @@ mod requires_clap {
         };
     }
 
+    /// Given a clap module in `mode::`, calls function `cla::check_matches` of that module, and
+    /// launches the result.
+    macro_rules! check_launch_else_none {
+        ( $matches:expr => ) => (
+            return None
+        );
+        ( $matches:expr =>
+            // name of the module
+            $mod_name:ident
+            // optional alias for the module, used for error reporting
+            // if none, use `stringify!($mod_name)`
+            $( ($name:expr) )?
+            // optional custom result handler, expected to yield `Result<Option<i32>>` (exit code)
+            $(
+                where
+                    |$res:ident| $action:expr
+            )?
+            $(, $($tail:tt)* )?
+        ) => {
+            if let Some(sub) = mode::$mod_name::cla::check_matches($matches) {
+                #[allow(unused_assignments, unused_mut)]
+                let mut desc =
+                    stringify!($mod_name);
+                $(
+                    desc = $name as &str;
+                )?
+                let sub = wrap_try! {
+                    sub.with_context(
+                        || format!("`{}` mod initialization failed", desc)
+                    )
+                };
+                #[allow(unused_variables)]
+                let sub_res = wrap_try! {
+                    sub.launch().with_context(
+                        || format!("failure while running `{}` mode", desc)
+                    )
+                };
+                #[allow(unused_assignments, unused_mut)]
+                let mut real_res = Ok(None);
+                $(
+                    let $res = sub_res;
+                    real_res = $action;
+                )?
+                return Some(real_res);
+            }
+            check_launch_else_none!($matches => $($($tail)*)?)
+        };
+    }
+
     /// Runs the mode specified by `matches`, if any.
     ///
     /// Only considers modes that must run **before** user configuration loading.
     pub fn try_pre_user_load(matches: &clap::ArgMatches) -> Option<Res<Option<i32>>> {
-        if let Some(setup) = mode::setup::cla::check_matches(&matches) {
-            let setup = wrap_try! {
-                setup.context("setup mode initialization failed")
-            };
-            wrap_try! {
-                setup.launch().context("failure during setup")
-            }
-            Some(Ok(None))
-        } else if let Some(uninstall) = mode::uninstall::cla::check_matches(&matches) {
-            let uninstall = wrap_try! {
-                uninstall.context("uninstall mod initialization failed")
-            };
-            wrap_try! {
-                uninstall.launch().context("failure during uninstall")
-            }
-            Some(Ok(None))
-        } else {
-            None
-        }
+        check_launch_else_none!(matches =>
+            setup,
+            uninstall,
+        );
     }
 
     /// Runs the mode specified by `matches`, if any.
     ///
     /// Only considers modes that must run **before** user configuration loading.
     pub fn try_pre_project_load(matches: &clap::ArgMatches) -> Option<Res<Option<i32>>> {
-        if let Some(init) = mode::init::cla::check_matches(&matches) {
-            let init = wrap_try! {
-                init.context("init mod initialization failed")
-            };
-            wrap_try! {
-                init.launch().context("failure during init")
-            }
-            Some(Ok(None))
-        } else if let Some(update) = mode::update::cla::check_matches(&matches) {
-            let update = wrap_try! {
-                update.context("update mod initialization failed")
-            };
-            wrap_try! {
-                update.launch().context("failure during update")
-            }
-            Some(Ok(None))
-        } else if let Some(tlc) = mode::tlc::cla::check_matches(&matches) {
-            let tlc = wrap_try! {
-                tlc.context("tlc mod initialization failed")
-            };
-            let exit_code = wrap_try! {
-                wrap_try!(tlc.launch().context("failure during tlc"))
-                    .code()
-                    .ok_or_else(|| anyhow!("failed to retrieve exit code of TLC process"))
-            };
-            Some(Ok(Some(exit_code)))
-        } else {
-            None
-        }
+        check_launch_else_none!(matches =>
+            init,
+            update,
+            tlc where
+                |res| {
+                    let code = wrap_try!(res.code().ok_or_else(
+                        || anyhow!("failed to retrieve exit code of TLC process")
+                    ));
+                    Ok(Some(code))
+                },
+        );
     }
 
     /// Runs the mode specified by `matches`, if any.
     ///
     /// Only considers modes that must run **after** user configuration loading.
     pub fn try_post_loading(matches: &clap::ArgMatches) -> Option<Res<Option<i32>>> {
-        if let Some(run) = mode::run::cla::check_matches(&matches) {
-            let run = wrap_try! {
-                run.context("run mod initialization failed")
-            };
-            let exit_code = wrap_try! {
-                run.launch().context("failure during run")
-            };
-            Some(Ok(Some(exit_code)))
-        } else if let Some(test) = mode::testing::cla::check_matches(&matches) {
-            let test = wrap_try! {
-                test.context("test mod initialization failed")
-            };
-            wrap_try! {
-                test.launch().context("failure during test")
-            }
-            Some(Ok(None))
-        } else if let Some(clean) = mode::clean::cla::check_matches(&matches) {
-            let clean = wrap_try! {
-                clean.context("clean mod initialization failed")
-            };
-            wrap_try! {
-                clean.launch().context("failure during clean")
-            }
-            Some(Ok(None))
-        } else {
-            None
-        }
+        check_launch_else_none!(matches =>
+            run where
+                |code| {
+                    Ok(Some(code))
+                },
+            testing ("test"),
+            clean,
+        );
     }
 }

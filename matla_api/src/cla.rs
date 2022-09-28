@@ -63,6 +63,7 @@ pub mod utils {
     pub mod logger {
         pub const LOGGER_KEY: &str = "LOGGER_KEY";
         pub const LOGGER_KEY_DEFAULT: &str = "warn";
+        pub const LOGGER_KEY_DEFAULT_VAL: base::log::LevelFilter = base::log::LevelFilter::Warn;
 
         /// Adds internal log flag.
         pub fn add(app: clap::Command<'static>) -> clap::Command<'static> {
@@ -81,19 +82,57 @@ pub mod utils {
             )
         }
 
-        /// Extracts the internal log setting from the log flag value.
-        pub fn of_matches(matches: &clap::ArgMatches) -> base::log::LevelFilter {
+        fn of_value(val: impl AsRef<str>) -> base::log::LevelFilter {
             use base::log::LevelFilter::*;
-            let val = matches
-                .get_one::<String>(LOGGER_KEY)
-                .expect("argument with default are always present");
-            match val as &str {
+            match val.as_ref() {
                 "warn" => Warn,
                 "info" => Info,
                 "debug" => Debug,
                 "trace" => Trace,
-                _ => unreachable!("[clap] unexpected value for internal logger flag"),
+                unexp => unreachable!(
+                    "[clap] unexpected value `{}` for internal logger flag",
+                    unexp,
+                ),
             }
+        }
+
+        /// Extracts the internal log setting from the log flag value if explicitely provided.
+        ///
+        /// Produces `None` if no value was explicitely provided.
+        pub fn try_explicit_of_matches(
+            matches: &clap::ArgMatches,
+        ) -> Option<base::log::LevelFilter> {
+            use clap::ValueSource;
+            match matches.value_source(LOGGER_KEY) {
+                Some(ValueSource::CommandLine | ValueSource::EnvVariable) => {
+                    matches.get_one::<String>(LOGGER_KEY).map(of_value)
+                }
+                None | Some(ValueSource::DefaultValue) | Some(_) => None,
+            }
+        }
+
+        /// Extracts the internal log setting from the log flag value.
+        pub fn of_matches(matches: &clap::ArgMatches) -> base::log::LevelFilter {
+            let val = matches
+                .get_one::<String>(LOGGER_KEY)
+                .expect("arguments with default value always have a value");
+            of_value(val)
+        }
+    }
+
+    /// Add arguments and check matches for subcommands.
+    pub mod sub_cmd {
+        prelude!();
+
+        pub fn augment(cmd: clap::Command<'static>) -> clap::Command<'static> {
+            super::logger::add(cmd)
+        }
+
+        pub fn check_matches(matches: &clap::ArgMatches) -> Res<()> {
+            if let Some(level) = super::logger::try_explicit_of_matches(matches) {
+                conf::top_cla::set_log_level(level).context("during CLAP")?
+            }
+            Ok(())
         }
     }
 }
