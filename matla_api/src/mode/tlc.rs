@@ -178,3 +178,60 @@ impl Run {
         Ok(Some(cmd))
     }
 }
+
+#[cfg(feature = "with_clap")]
+mod cla_spec {
+    prelude!();
+
+    /// TLC subcommand name.
+    const CMD_NAME: &str = "tlc";
+    /// TLC options key.
+    const ARGS_KEY: &str = "TLC_ARGS_KEY";
+
+    impl mode::ClaMode for super::Run {
+        const SUBCOMMAND_IDENT: &'static str = CMD_NAME;
+        const PREREQ: mode::ClaModePrereq = mode::ClaModePrereq::Project;
+
+        fn build_command(cmd: clap::Command<'static>) -> clap::Command<'static> {
+            let cmd = cmd.about("Calls TLC with some arguments.");
+            crate::mode::run::cla::tlc_args(cmd).args(&[
+                clap::Arg::new(ARGS_KEY)
+                    .help("Options to pass to the TLC command *directly*")
+                    .index(2)
+                    .last(true)
+                    .multiple_values(true)
+                    .value_name("TLC OPTIONS")
+                    .takes_value(true),
+                clap::Arg::new(crate::mode::run::cla::SHOW_CONFIG_KEY)
+                    .help("Displays the options that matla will use to run TLC")
+                    .long("show_tlc_config"),
+            ])
+        }
+        fn build(matches: &clap::ArgMatches) -> Res<Self> {
+            let opts = matches.values_of(ARGS_KEY);
+            let args = opts
+                .into_iter()
+                .map(|s| {
+                    s.into_iter()
+                        .map(|s| s.split(char::is_whitespace))
+                        .flatten()
+                })
+                .flatten()
+                .filter_map(|s| {
+                    let s = s.trim();
+                    if s.is_empty() {
+                        None
+                    } else {
+                        Some(s.to_string())
+                    }
+                })
+                .collect();
+            let (tlc_cla, module, release) = crate::mode::run::cla::handle_tlc_args(matches);
+            let show_config = matches.is_present(crate::mode::run::cla::SHOW_CONFIG_KEY);
+            Self::new(tlc_cla, module, release, args, show_config)
+        }
+        fn run(self) -> Res<Option<i32>> {
+            self.launch().map(|status| status.code())
+        }
+    }
+}

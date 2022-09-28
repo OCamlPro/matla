@@ -68,3 +68,28 @@ impl Run {
         Ok(())
     }
 }
+
+#[cfg(feature = "with_clap")]
+mod cla_spec {
+    prelude!();
+
+    /// Clean subcommand name.
+    const CMD_NAME: &str = "clean";
+
+    impl mode::ClaMode for super::Run {
+        const SUBCOMMAND_IDENT: &'static str = CMD_NAME;
+        const PREREQ: mode::ClaModePrereq = mode::ClaModePrereq::Project;
+
+        fn build_command(cmd: clap::Command<'static>) -> clap::Command<'static> {
+            cmd.about("Cleans the current project: deletes the `target` directory.")
+                .args(&[cla::top::project_path_arg()])
+        }
+        fn build(_matches: &clap::ArgMatches) -> Res<Self> {
+            Self::new()
+        }
+        fn run(self) -> Res<Option<i32>> {
+            self.launch()?;
+            Ok(None)
+        }
+    }
+}

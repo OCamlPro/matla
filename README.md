@@ -60,26 +60,25 @@ Matla is not on [crates.io], you can still install it with `cargo` which you get
 Make sure everything works:
 
 ```
-> matla help
-matla 0.1.0-alpha0
+matla 0.1.0-alpha1
 
-Manager for TLA+ projects.
+A project manager for TLA+ projects.
 
 USAGE:
-    matla [FLAGS] [OPTIONS] [SUBCOMMAND]
-
-FLAGS:
-    -p, --portable    Infer toolchain from environment, load no user configuration
-    -v                Increases verbosity, capped at 3
-    -h, --help        Prints help information
-    -V, --version     Prints version information
+    lmatla [OPTIONS] [SUBCOMMAND]
 
 OPTIONS:
-    -c, --color <true|on|false|off>    (De)activates colored output [default: on]
+    -c, --color <true|on|false|off>    (De)activates colored output. [default: on]
+    -h, --help                         Print help information
+        --log <LOG_LEVEL>              Makes the internal logger more verbose, mostly for debugging.
+                                       [default: warn] [possible values: warn, info, debug, trace]
+    -p, --portable                     Infer toolchain from environment, load no user configuration.
+        --path <DIR>                   Path to a matla project directory [default: .]
+    -V, --version                      Print version information
 
 SUBCOMMANDS:
     clean        Cleans the current project: deletes the `target` directory.
-    help         Prints this message or the help of the given subcommand(s)
+    help         Print this message or the help of the given subcommand(s)
     init         Initializes an existing directory as a matla project.
     run          Runs TLC on a TLA module in a project directory.
     setup        Performs this initial matla setup, required before running matla.

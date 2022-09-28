@@ -17,120 +17,206 @@ pub use self::requires_clap::*;
 mod requires_clap {
     prelude!();
 
-    /// Generates all the subcommands for all the modes.
-    pub fn all_subcommands<'a>() -> [clap::Command<'static>; 8] {
-        [
-            super::clean::cla::subcommand(),
-            super::init::cla::subcommand(),
-            super::run::cla::subcommand(),
-            super::setup::cla::subcommand(),
-            super::testing::cla::subcommand(),
-            super::tlc::cla::subcommand(),
-            super::uninstall::cla::subcommand(),
-            super::update::cla::subcommand(),
-        ]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub enum ClaModePrereq {
+        /// Mode runs before loading user config.
+        PreUser,
+        /// Mode runs after loading user config, but before loading project config.
+        PreProject,
+        /// Mode runs after loading user and project config.
+        Project,
     }
-
-    /// Wraps the result of `action()` in a `Some(_)`.
-    macro_rules! wrap_try {
-        ($e:expr) => {
-            match $e {
-                Ok(res) => res,
-                Err(e) => return Some(Err(e.into())),
-            }
-        };
-    }
-
-    /// Runs the mode specified by `matches`, if any.
-    ///
-    /// Only considers modes that must run **before** user configuration loading.
-    pub fn try_pre_user_load(matches: &clap::ArgMatches) -> Option<Res<Option<i32>>> {
-        if let Some(setup) = mode::setup::cla::check_matches(&matches) {
-            let setup = wrap_try! {
-                setup.context("setup mode initialization failed")
-            };
-            wrap_try! {
-                setup.launch().context("failure during setup")
-            }
-            Some(Ok(None))
-        } else if let Some(uninstall) = mode::uninstall::cla::check_matches(&matches) {
-            let uninstall = wrap_try! {
-                uninstall.context("uninstall mod initialization failed")
-            };
-            wrap_try! {
-                uninstall.launch().context("failure during uninstall")
-            }
-            Some(Ok(None))
-        } else {
-            None
+    impl ClaModePrereq {
+        pub fn is_pre_user(self) -> bool {
+            self == Self::PreUser
+        }
+        pub fn is_pre_project(self) -> bool {
+            self == Self::PreProject
         }
     }
 
-    /// Runs the mode specified by `matches`, if any.
+    /// Trait implemented by modes.
     ///
-    /// Only considers modes that must run **before** user configuration loading.
-    pub fn try_pre_project_load(matches: &clap::ArgMatches) -> Option<Res<Option<i32>>> {
-        if let Some(init) = mode::init::cla::check_matches(&matches) {
-            let init = wrap_try! {
-                init.context("init mod initialization failed")
-            };
-            wrap_try! {
-                init.launch().context("failure during init")
-            }
-            Some(Ok(None))
-        } else if let Some(update) = mode::update::cla::check_matches(&matches) {
-            let update = wrap_try! {
-                update.context("update mod initialization failed")
-            };
-            wrap_try! {
-                update.launch().context("failure during update")
-            }
-            Some(Ok(None))
-        } else if let Some(tlc) = mode::tlc::cla::check_matches(&matches) {
-            let tlc = wrap_try! {
-                tlc.context("tlc mod initialization failed")
-            };
-            let exit_code = wrap_try! {
-                wrap_try!(tlc.launch().context("failure during tlc"))
-                    .code()
-                    .ok_or_else(|| anyhow!("failed to retrieve exit code of TLC process"))
-            };
-            Some(Ok(Some(exit_code)))
-        } else {
-            None
-        }
+    /// Causes to implement [`ClaModeSpec`] which is what the top-level actually uses. The auto-impl
+    /// augments the command with generic flags that should be available everywhere, such as the
+    /// internal log level flag.
+    ///
+    /// Auto-impl also makes sure to account for these flags once
+    pub trait ClaMode: Sized {
+        const SUBCOMMAND_IDENT: &'static str;
+        const PREREQ: ClaModePrereq;
+        /// For error-reporting.
+        const DESC: &'static str = Self::SUBCOMMAND_IDENT;
+        fn build_command(cmd: clap::Command<'static>) -> clap::Command<'static>;
+        fn build(matches: &clap::ArgMatches) -> Res<Self>;
+        fn run(self) -> Res<Option<i32>>;
     }
 
-    /// Runs the mode specified by `matches`, if any.
+    // /// Mode specification, automatically implemented for any type implementing [`ClaMode`].
+    // pub trait ClaModeSpec {
+    //     const SUBCOMMAND_IDENT: &'static str;
+    //     const IS_PROJECT_MODE: bool;
+    //     const DESC: &'static str;
+    //     fn add_subcommand(cmd: clap::Command<'static>) -> clap::Command<'static>;
+    //     fn try_run(matches: &clap::ArgMatches) -> Option<Res<Option<i32>>>;
+    // }
+
+    // impl<T> ClaModeSpec for T
+    // where
+    //     T: ClaMode,
+    // {
+    //     const SUBCOMMAND_IDENT: &'static str = Self::SUBCOMMAND_IDENT;
+    //     const IS_PROJECT_MODE: bool = Self::IS_PROJECT_MODE;
+    //     const DESC: &'static str = Self::DESC;
+
+    //     fn add_subcommand(cmd: clap::Command<'static>) -> clap::Command<'static> {
+    //         let mut sub = clap::Command::new(Self::SUBCOMMAND_IDENT);
+    //         sub = Self::build_command(sub);
+    //         // add generic flags
+    //         sub = cla::utils::sub_cmd::augment(sub);
+    //         cmd.subcommand(sub)
+    //     }
+
+    //     fn try_run(matches: &clap::ArgMatches) -> Option<Res<Option<i32>>> {
+    //         // account for generic flags
+    //         match cla::utils::sub_cmd::check_matches(matches) {
+    //             Ok(()) => (),
+    //             Err(e) => return Some(Err(e)),
+    //         }
+    //         let slf = match Self::build(matches)
+    //             .with_context(|| anyhow!("building `{}` mode", Self::DESC))
+    //         {
+    //             Ok(slf) => slf,
+    //             Err(e) => return Some(Err(e)),
+    //         };
+    //         Some(slf.run())
+    //     }
+    // }
+
+    /// Generates the input enum and some helpers.
     ///
-    /// Only considers modes that must run **after** user configuration loading.
-    pub fn try_post_loading(matches: &clap::ArgMatches) -> Option<Res<Option<i32>>> {
-        if let Some(run) = mode::run::cla::check_matches(&matches) {
-            let run = wrap_try! {
-                run.context("run mod initialization failed")
-            };
-            let exit_code = wrap_try! {
-                run.launch().context("failure during run")
-            };
-            Some(Ok(Some(exit_code)))
-        } else if let Some(test) = mode::testing::cla::check_matches(&matches) {
-            let test = wrap_try! {
-                test.context("test mod initialization failed")
-            };
-            wrap_try! {
-                test.launch().context("failure during test")
+    /// # Input
+    ///
+    /// An enum definition with nullary variants. Variant identifiers are followed by `for
+    /// $mode:ident` which must be the name of a mode-submodule with a `Run` type implementing
+    /// [`ClaMode`] (and therefore [`ClaModeSpec`]).
+    ///
+    /// # Generates
+    ///
+    /// The enum `$ename` with variants `$variant(super::$mode::Run)`.
+    ///
+    /// - `list_all` returns a list of all variants of `$ename`;
+    /// - `of_subcommand` returns the mode associated with a given subcommand;
+    /// - `$ename` lifts all functions of [`ClaModeSpec`] from its variants.
+    macro_rules! enum_gather_specs {
+        (
+            $(#[$emeta:meta])*
+            $evis:vis enum $ename:ident {
+                $(
+                    $(#[$vmeta:meta])*
+                    $variant:ident for $mode:ident
+                ),*
+                $(,)?
             }
-            Some(Ok(None))
-        } else if let Some(clean) = mode::clean::cla::check_matches(&matches) {
-            let clean = wrap_try! {
-                clean.context("clean mod initialization failed")
-            };
-            wrap_try! {
-                clean.launch().context("failure during clean")
+        ) => (
+            $(#[$emeta])*
+            #[derive(Debug, Clone)]
+            $evis enum $ename {
+                $( $(#[$vmeta])* $variant(super::$mode::Run) , )*
             }
-            Some(Ok(None))
-        } else {
-            None
+
+            impl $ename {
+                pub fn prereq(&self) -> ClaModePrereq {
+                    match self {
+                        $(
+                            Self::$variant(_) => super::$mode::Run::PREREQ,
+                        )*
+                    }
+                }
+
+                pub fn desc(&self) -> &'static str {
+                    match self {
+                        $(
+                            Self::$variant(_) => super::$mode::Run::DESC,
+                        )*
+                    }
+                }
+
+                // pub fn build_command(self, cmd: clap::Command<'static>) -> clap::Command<'static> {
+                //     match self {
+                //         $(
+                //             Self::$variant(_) => super::$mode::Run::build_command(cmd),
+                //         )*
+                //     }
+                // }
+
+                // pub fn add_subcommand(self, cmd : clap::Command<'static>) -> clap::Command<'static> {
+                //     let mut sub = clap::Command::new(self.subcommand_ident());
+                //     sub = self.build_command(sub);
+                //     // add generic flags
+                //     sub = cla::utils::sub_cmd::augment(sub);
+                //     cmd.subcommand(sub)
+                // }
+                pub fn add_all_subcommands(mut cmd: clap::Command<'static>) -> clap::Command<'static> {
+                    $(
+                        let mut sub = clap::Command::new(super::$mode::Run::SUBCOMMAND_IDENT);
+                        sub = super::$mode::Run::build_command(sub);
+                        // add generic flags
+                        sub = cla::utils::sub_cmd::augment(sub);
+                        cmd = cmd.subcommand(sub);
+                    )*
+                    cmd
+                }
+
+                pub fn from_subcommand(matches: &clap::ArgMatches) -> Res<Self> {
+                    let (sub, matches) = matches.subcommand().
+                        ok_or_else(|| anyhow!("expected matla command, found nothing"))?;
+                    $(
+                        if sub == super::$mode::Run::SUBCOMMAND_IDENT {
+                            // account for generic flags
+                            cla::utils::sub_cmd::check_matches(matches)
+                                .with_context(|| anyhow!("handling arguments for command `{}`", sub))?;
+                            let mode = super::$mode::Run::build(matches)
+                                .with_context(|| anyhow!("building `{}` mode", super::$mode::Run::DESC))?;
+                            return Ok(Self::$variant(mode))
+                        }
+                    )*
+                    bail!("unexpected command `{}`", sub)
+                }
+
+                pub fn run(self) -> Res<Option<i32>> {
+                    match self {
+                        $(
+                            Self::$variant(mode) =>
+                                mode.run().with_context(|| anyhow!(
+                                    "failure while running `{}` mode", super::$mode::Run::DESC
+                                )),
+                        )*
+                    }
+                }
+            }
+        );
+    }
+
+    enum_gather_specs! {
+        /// Gathers all modes.
+        pub enum Mode {
+            /// Project cleaning mode.
+            Clean for clean,
+            /// Project init mode.
+            Init for init,
+            /// Run mode.
+            Run for run,
+            /// Setup mode.
+            Setup for setup,
+            /// Test mode.
+            Test for testing,
+            /// TLC mode, only runs TLC.
+            Tlc for tlc,
+            /// Uninstals matla.
+            Uninstall for uninstall,
+            /// Updates the TLA+ toolchain.
+            Update for update,
         }
     }
 }
