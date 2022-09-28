@@ -58,6 +58,44 @@ pub mod utils {
         pub const U64_OR_RANDOM: &str = "[Rr]andom|_|INT ≥ 0";
         pub const U64_OR_DEFAULT: &str = "[Dd]efault|_|INT ≥ 0";
     }
+
+    /// Handles internal [`base::log`] configuration.
+    pub mod logger {
+        pub const LOGGER_KEY: &str = "LOGGER_KEY";
+        pub const LOGGER_KEY_DEFAULT: &str = "warn";
+
+        /// Adds internal log flag.
+        pub fn add(app: clap::Command<'static>) -> clap::Command<'static> {
+            let possible_values = [
+                clap::PossibleValue::new("warn"),
+                clap::PossibleValue::new("info"),
+                clap::PossibleValue::new("debug"),
+                clap::PossibleValue::new("trace"),
+            ];
+            app.arg(
+                clap::Arg::new(LOGGER_KEY)
+                    .long("log")
+                    .default_value(LOGGER_KEY_DEFAULT)
+                    .value_parser(possible_values)
+                    .help("makes the internal logger more verbose, mostly for debugging"),
+            )
+        }
+
+        /// Extracts the internal log setting from the log flag value.
+        pub fn of_matches(matches: &clap::ArgMatches) -> base::log::LevelFilter {
+            use base::log::LevelFilter::*;
+            let val = matches
+                .get_one::<String>(LOGGER_KEY)
+                .expect("argument with default are always present");
+            match val as &str {
+                "warn" => Warn,
+                "info" => Info,
+                "debug" => Debug,
+                "trace" => Trace,
+                _ => unreachable!("[clap] unexpected value for internal logger flag"),
+            }
+        }
+    }
 }
 
 /// Matla's top-level CLAP.
@@ -65,8 +103,12 @@ pub mod utils {
 pub mod top {
     prelude!();
 
-    /// CLAP key for verbosity.
-    pub const VERB_KEY: &str = "TOP_VERB";
+    // /// CLAP key for increasing verbosity.
+    // pub const VERB_KEY: &str = "TOP_VERB";
+    // /// CLAP key for decreasing verbosity.
+    // pub const QUIET_KEY: &str = "TOP_QUIET";
+    /// CLAP key for internal log verbosity.
+    pub const LOG_KEY: &str = "TOP_LOG";
     /// CLAP key for portability.
     pub const PORTABLE_KEY: &str = "TOP_PORTABLE";
     /// CLAP key for color.
@@ -128,20 +170,25 @@ pub mod top {
 
     /// Top-level CLAP command.
     pub fn command(cmd: clap::Command<'static>) -> clap::Command<'static> {
+        let cmd = super::utils::logger::add(cmd);
         cmd.args(&[
-            clap::Arg::new(VERB_KEY)
-                .short('v')
-                .multiple_occurrences(true)
-                .help("Increases verbosity, capped at 3"),
+            // clap::Arg::new(VERB_KEY)
+            //     .short('v')
+            //     .multiple_occurrences(true)
+            //     .help("increases verbosity"),
+            // clap::Arg::new(QUIET_KEY)
+            //     .short('q')
+            //     .multiple_occurrences(true)
+            //     .help("decreases verbosity"),
             clap::Arg::new(PORTABLE_KEY)
                 .short('p')
                 .long("portable")
-                .help("Infer toolchain from environment, load no user configuration"),
+                .help("infer toolchain from environment, load no user configuration"),
             project_path_arg(),
             clap::Arg::new(COLOR_KEY)
                 .short('c')
                 .long("color")
-                .help("(De)activates colored output")
+                .help("(de)activates colored output")
                 .takes_value(true)
                 .default_value(COLOR_KEY_DEFAULT)
                 .value_name(cla::utils::BOOL_VALUES)
@@ -152,12 +199,7 @@ pub mod top {
 
     /// Performs top-level CLAP and returns the matches.
     pub fn init_from_matches(matches: &clap::ArgMatches) -> Res<()> {
-        let log_level = match matches.occurrences_of(cla::top::VERB_KEY) {
-            0 => base::log::LevelFilter::Warn,
-            1 => base::log::LevelFilter::Info,
-            2 => base::log::LevelFilter::Debug,
-            _ => base::log::LevelFilter::Trace,
-        };
+        let log_level = super::utils::logger::of_matches(matches);
         let color = {
             let from_user = matches.is_present(cla::top::COLOR_KEY);
             let val = cla::utils::validate_bool(
