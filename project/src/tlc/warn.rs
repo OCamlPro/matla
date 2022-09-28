@@ -2,8 +2,10 @@
 
 prelude!();
 
+/// Enumerates all the warnings handled by matla.
 #[derive(Debug, Clone)]
 pub enum TlcWarning {
+    /// A redefinition.
     Redef(Redef),
 }
 impl TlcWarning {
@@ -29,10 +31,14 @@ implem! {
     }
 }
 
+/// A redefinition for some `sym`bol at some `pos`ition for a `prev`iously defined symbol.
 #[derive(Debug, Clone)]
 pub struct Redef {
+    /// Position of the redefinition.
     pub pos: source::FileSpan,
+    /// Symbol that's being redefined.
     pub sym: String,
+    /// Position of the original definition.
     pub prev: source::FileSpan,
 }
 

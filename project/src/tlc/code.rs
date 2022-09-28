@@ -9,6 +9,41 @@
 
 prelude!();
 
+/// Type-safe wrapper for message codes ([`isize`]).
+///
+/// **Constructing** a code is illegal outside of this module, hence the private constructor.
+/// **Accessing** the code however is fine.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Code {
+    code: isize,
+}
+impl Code {
+    /// Private constructor.
+    fn new(code: isize) -> Code {
+        Self { code }
+    }
+
+    /// Code accessor.
+    pub fn get(&self) -> isize {
+        self.code
+    }
+}
+implem! {
+    for Code {
+        Display {
+            |&self, fmt| write!(fmt, "#({})", self.code)
+        }
+        Into<isize> {
+            |self| self.code
+        }
+    }
+    impl('a) for &'a Code {
+        Into<isize> {
+            |self| self.code
+        }
+    }
+}
+
 macro_rules! code_variant_construct {
     ($contents:expr, $desc:expr, $variant:expr,
         |$code_contents_arg:ident| $code_new:expr
@@ -89,9 +124,10 @@ macro_rules! code_enums {
             impl $enum_name {
                 /// Constructor from a code.
                 pub fn from_code(
-                    code: $int_ty,
+                    code: impl Into<$int_ty>,
                     _contents: &tlc::msg::Elms,
                 ) -> Res<Option<Self>> {
+                    let code = code.into();
                     match code {
                         $($(
                             $code => code_variant_construct!(
@@ -113,10 +149,10 @@ macro_rules! code_enums {
                 }
 
                 /// Code value accessor.
-                pub fn code(&self) -> isize {
+                pub fn code(&self) -> Code {
                     match self {
                         $( $(
-                            Self::$code_variant { .. } => $code,
+                            Self::$code_variant { .. } => Code::new($code),
                         )* )?
                         $( $(
                             Self::$sub_code_variant(sub) => sub.code(),
@@ -732,7 +768,7 @@ lazy_static! {
 }
 impl TopMsg {
     /// Constructor.
-    pub fn new(code: isize, contents: &tlc::msg::Elms) -> Res<Self> {
+    pub fn new(code: Code, contents: &tlc::msg::Elms) -> Res<Self> {
         Self::from_code(code, contents)?
             .ok_or_else(|| anyhow!("unknown TLC message code `{}`", code))
     }
@@ -794,7 +830,7 @@ impl TopMsg {
     }
 
     /// Parses a message start.
-    pub fn parse_start(s: impl AsRef<str>) -> Res<Option<(isize, usize)>> {
+    pub fn parse_start(s: impl AsRef<str>) -> Res<Option<(Code, usize)>> {
         let s = s.as_ref();
 
         if s.contains("Unable to locate a Java Runtime") {
@@ -827,8 +863,9 @@ impl TopMsg {
 
         let code = {
             let code = &capture[1];
-            isize::from_str_radix(code, 10)
-                .with_context(|| msg::fatal!("failed to parse `isize` value `{}`", code))?
+            let code = isize::from_str_radix(code, 10)
+                .with_context(|| msg::fatal!("failed to parse `isize` value `{}`", code))?;
+            Code::new(code)
             // Self::from_code(code).ok_or_else(|| anyhow!("unknown TLC *error code* `{}`", code))?
         };
         let trail = {
@@ -840,7 +877,7 @@ impl TopMsg {
     }
 
     /// Parses a message end.
-    pub fn parse_end(s: impl AsRef<str>) -> Res<Option<isize>> {
+    pub fn parse_end(s: impl AsRef<str>) -> Res<Option<Code>> {
         let s = s.as_ref();
 
         if s.contains("on installing Java") {
@@ -873,8 +910,9 @@ impl TopMsg {
 
         let code = {
             let code = &capture[1];
-            isize::from_str_radix(code, 10)
-                .with_context(|| msg::fatal!("failed to parse `isize` value `{}`", code))?
+            let code = isize::from_str_radix(code, 10)
+                .with_context(|| msg::fatal!("failed to parse `isize` value `{}`", code))?;
+            Code::new(code)
             // Self::from_code(code).ok_or_else(|| anyhow!("unknown TLC *error code* `{}`", code))?
         };
         Ok(Some(code))
@@ -931,7 +969,7 @@ impl Err {
         let styles = conf::Styles::new();
         match self {
             Self::Problem(inner) => inner.report(&styles),
-            _ => unhandled_error!(styles, self.code()),
+            _ => unhandled_error!(styles, self.code().get()),
         }
     }
 
@@ -1133,7 +1171,7 @@ impl TlcProblem {
                 }
                 println!(" with no failure message");
             }
-            _ => unhandled_error!(styles, self.code()),
+            _ => unhandled_error!(styles, self.code().get()),
         }
     }
 

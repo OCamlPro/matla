@@ -1,4 +1,4 @@
-//! Message-handling parser.
+//! Message-handling parsing helpers.
 
 prelude!();
 
@@ -6,20 +6,28 @@ pub use self::parser::*;
 
 peg::parser! {
     grammar parser() for str {
+        /// Parses a newline.
         rule nl() = quiet! { ['\n' | '\r' ] }
+        /// Parses a whitespace.
+        ///
+        /// Calling the rule `_` allows to write `_` instead of `<rule_name>()`.
         rule _ = quiet! {
             [' ' | '\t' | '\n' | '\r' ]*
         } / expected!("whitespace")
+
+        /// A digit as a character.
         rule num_char() = ['0'..='9']
 
-        rule usize() -> usize
+        /// Parses a `usize`.
+        pub rule usize() -> usize
         = quiet! {
             num:$(num_char()+) {?
                 usize::from_str_radix(num, 10).map_err(|_| "illegal integer")
             }
         } / expected!("`usize` value")
 
-        rule pretty_usize() -> usize
+        /// Parses a `usize` with `,` delimiters (`10³` separators).
+        pub rule pretty_usize() -> usize
         = quiet!{
             num:$(num_char()+) tail:( "," sub:$(num_char()+) { sub } )* {?
                 if tail.is_empty() {
@@ -37,14 +45,21 @@ peg::parser! {
             }
         } / expected!("`usize` value")
 
-        rule int() -> Int
+
+        /// Parses an integer.
+        ///
+        /// TODO: test and fix.
+        pub rule int() -> Int
         = quiet! {
             num:$(num_char()+) {?
                 Int::parse_bytes(num.as_bytes(), 10).ok_or_else(|| "illegal integer")
             }
         } / expected!("`usize` value")
 
-        rule pretty_int() -> Int
+        /// Parses an integer with `,` delimiters (`10³` separators).
+        ///
+        /// TODO: test and fix.
+        pub rule pretty_int() -> Int
         = quiet!{
             num:$(num_char()+) tail:( "," sub:$(num_char()+) { sub } )* {?
                 if tail.is_empty() {
@@ -62,23 +77,45 @@ peg::parser! {
             }
         } / expected!("`usize` value")
 
+        /// Parses a double-quoted string.
+        ///
+        /// TODO: de-escape characters, probably.
         pub rule dq_string() -> &'input str
         = quiet! {
             "\"" content:$(("\\\"" / "\\\\" / [^'"'])*) "\"" { content }
         } / expected!("double-quoted string")
 
-        rule file_or_dir() -> &'input str
-        = quiet! {
-            $([^'/']+)
-        } / expected!("file or directory name")
-        rule parent_path() -> &'input str
+        /// A legal unix file/dir name.
+        ///
+        /// Spaces are expected to be escaped.
+        ///
+        /// # Examples
+        ///
+        /// ```rust
+        /// # use project::tlc::parse::unix_file_name;
+        /// let input = r#"some\ file.n_a-me.ext"#;
+        /// assert_eq!(unix_file_name(input), Ok(input));
+        /// ```
+        pub rule unix_file_name() -> &'input str
         = quiet! {
             $(
-                ("/")? (file_or_dir() "/")*
+                (
+                    ['_' | '-' | 'a'..='z' | 'A'..='Z' | '0'..='9' | '.']
+                    / ("\\" " ")
+                )+
+            )
+        } / expected!("legal unix file/directory name")
+
+        /// A path with a trailing `/`, can be empty.
+        pub rule parent_path() -> &'input str
+        = quiet! {
+            $(
+                ("/")? (unix_file_name() "/")*
             )
         } / expected!("filesystem path ending with `/`")
 
-        rule ident() -> &'input str
+        /// A TLA+ identifier.
+        pub rule ident() -> &'input str
         = quiet! {
             $(
                 ['_' | 'a'..='z' | 'A'..='Z']
@@ -86,29 +123,25 @@ peg::parser! {
             )
         } / expected!("identifier")
 
-        rule file_name() -> String
+        /// A position `line <nat>, col <nat>`.
+        ///
+        /// Accepts `Line` instead of `line`, and `column` instead of `col`.
+        pub rule file_pos() -> source::Pos
         = quiet! {
-            name:$(
-                ident() ("." ident())?
-            ) { name.into() }
-        } / expected!("file name")
-
-        rule file_pos() -> source::Pos
-        = quiet! {
-            "line" _ row:usize() _ "," _ ("column" / "col") _ col:usize() {
+            ['l'|'L'] "ine" _ row:usize() _ "," _ ("column" / "col") _ col:usize() {
                 source::Pos::new(row, col)
             }
         }
         / expected!("line/column file position")
 
-        rule file_pos_span() -> source::FileSpan
-        = "Line" _ start_row:usize() _ "," _ "column" _ start_col:usize()
-        _ "to" _ "line" _ end_row:usize() _ "," _ "column" _ end_col:usize()
-        _ "in" _ module:ident() {
-            source::FilePos::new(module, (start_row, start_col))
-                .into_span((end_row, end_col))
+        /// A span in a file for some module.
+        pub rule file_pos_span() -> source::FileSpan
+        = start:file_pos() _ "to" _ end:file_pos() _ "in" _ module:ident() {
+            source::FilePos::new(module, start)
+                .into_span(end)
         }
 
+        /// A TLC date.
         pub rule date() -> chrono::NaiveDateTime
         = quiet! {
             date:$(
@@ -135,6 +168,7 @@ peg::parser! {
             }
         } / expected!("date/time")
 
+        /// An exception from TLC.
         pub rule exc() -> tlc::err::Exc
         = quiet! {
             "tla2sany.semantic.AbortException" { tlc::err::Exc::Abort }
@@ -186,15 +220,30 @@ peg::parser! {
 
         // # Parse Error Stuff
 
+        /// Parses a `Was expecting "..."` line.
         pub rule parse_error_1_expected() -> String
         = "Was" _ "expecting" _ expected:dq_string() {
             expected.into()
         }
+
+        /// Parses a `Encountered "..." at ...` line.
         pub rule parse_error_1_got() -> (String, source::Pos, Option<String>)
         = "Encountered" _ got:dq_string() _ "at" _ pos:file_pos()
-        _ and:("and" _ "token"? _ "\""? and:$((!['.' | '\n' | '\r' | '\"'] [_])*) "\""? _ { and })? {
+        _ and:(
+            "and" _ "token"? _ "\""?
+            and:$(
+                (!['.' | '\n' | '\r' | '\"'] [_])*
+            ) "\""? _ {
+                and
+            }
+        )? {
             (got.into(), pos, and.map(|s| s.to_string()))
         }
+
+        /// Parses a parse error element, *i.e.* a parsing step.
+        ///
+        /// Several of these steps can be reported for a given error, exposing what parsing state
+        /// TLC was in when the error occurred.
         pub rule parse_error_trace_elm() -> (String, source::Pos)
         = "Module" _ "definition" _ "starting" _ "at" _ pos:file_pos() _ "." {
             ("module definition start".into(), pos)
@@ -218,12 +267,18 @@ peg::parser! {
         _ "at" _ pos:file_pos() _ "." {
             (blah.trim().into(), pos)
         }
+
+        /// Parses a trace of [`parse_error_trace_elm`].
+        ///
+        /// Such a trace describes the parsing state where a parse error occurred.
         pub rule parse_error_trace() -> Vec<(String, source::Pos)>
         = "Residual" _ "stack" _ "trace" _ "follows" _ ":" _ trace:(
             _ elm:parse_error_trace_elm() { elm }
         )* _ {
             trace
         }
+
+        /// Tail of a parse error, reports the actual error.
         pub rule parse_error_tail() -> String
         = "Fatal" _ "errors" _ "while" _ "parsing" _ "TLA+" _ "spec"
         _ "in" _ "file" _ module_0:ident()
@@ -231,10 +286,11 @@ peg::parser! {
         _ "***" _ "Abort" _ "messages" _ ":" _ _abort_msg:usize()
         _ "In" _ "module" _ module_1:ident()
         _ "Could" _ "not" _ "parse" _ "module" _ module_2:ident()
-        _ "from" _ "file" _ _file:file_name() {
+        _ "from" _ "file" _ _file:unix_file_name() {
             module_0.into()
         }
 
+        /// *Expected* / *got* full parse error.
         pub rule parse_parse_error_1() -> tlc::err::ParseError
         =
             expected:parse_error_1_expected()
@@ -246,14 +302,14 @@ peg::parser! {
                 }
             }
 
-
-
+        /// *Encountered* / *at* / *and* error description.
         pub rule parse_error_2_encountered() -> (String, source::Pos, Option<String>)
         = "Encountered" _ encountered:dq_string() _ "at"
         _ pos:file_pos() _ "and" _ "token" _ token:dq_string() {
             (encountered.into(), pos, Some(token.into()))
         }
 
+        /// *Encountered* / *at* / *and* full parse error.
         pub rule parse_parse_error_2() -> tlc::err::ParseError
         =
             encountered:parse_error_2_encountered()
@@ -267,14 +323,17 @@ peg::parser! {
                 }
             }
 
-
-
+        /// Parses any full parse error.
         pub rule parse_parse_error() -> tlc::err::ParseError
-        = parse_parse_error_1()
-        / parse_parse_error_2()
+        =
+            parse_parse_error_1()
+            / parse_parse_error_2()
 
 
 
+        // # Lexical Error
+
+        /// Parses a line describing what lexical analysis found that caused an error.
         pub rule lexical_error_got() -> (String, source::Pos)
         =
             "at" _ pos:file_pos() _ "."
@@ -282,6 +341,8 @@ peg::parser! {
             _ "(" _ usize() _ ")" {
                 (token.into(), pos)
             }
+
+        /// Parses full lexical errors.
         pub rule parse_lexical_error() -> tlc::err::LexicalError
         =
         // = quiet! {
@@ -297,6 +358,7 @@ peg::parser! {
             }
         // } / expected!("lexical error")
 
+        /// Parses a full semantic error.
         pub rule semantic_error(module: &ModuleOrTop) -> tlc::err::TlcError
         = terrible_error:$(
             _ "java.lang.NullPointerException" _ ":"
@@ -389,6 +451,7 @@ peg::parser! {
             tlc::err::TlcError::new_list(vec![main.into(), sub.into()])
         }
 
+        /// Parses a plain parse error, a semantic error, a lexical error, or an exception.
         pub rule parse_error(module: &ModuleOrTop) -> tlc::err::TlcError
         = err:(
             e:parse_parse_error() { e.force_module(module.clone()).into() }
@@ -418,7 +481,8 @@ peg::parser! {
             }
         }
 
-        pub rule parse_warning() -> tlc::warn::TlcWarning
+        /// Parses a redefinition warning.
+        pub rule warning_redef() -> tlc::warn::Redef
         =
             sym_start:file_pos() _ "to" _ sym_end:file_pos() _ "of" _ "module" _ module:ident() _ "."?
             _ "Multiple" _ "declarations" _ "or" _ "definitions" _ "for" _ "symbol" _ sym:ident() _ "."?
@@ -429,10 +493,22 @@ peg::parser! {
                     pos: source::FileSpan::new(source::FilePos::new(module, sym_start), sym_end),
                     sym: sym.into(),
                     prev: source::FileSpan::new(source::FilePos::new(prev_module, prev_start), prev_end),
-                }.into()
+                }
             }
 
-        rule parsing_file() -> ModuleOrTop
+        /// Parses a warning.
+        pub rule parse_warning() -> tlc::warn::TlcWarning
+        =
+            redef:warning_redef() { redef.into() }
+
+
+
+
+        // # Status parsing
+
+
+        /// Status: TLC is parsing a file.
+        pub rule parsing_file() -> ModuleOrTop
         = "Parsing" _ "file" _ (parent_path())? module:ident() "." ext:ident() {
             if ext == "cfg" {
                 ModuleOrTop::TopCfg
@@ -440,11 +516,14 @@ peg::parser! {
                 module.to_string().into()
             }
         }
-        rule processing_file() -> ModuleOrTop
+
+        /// Status: TLC is processing a file.
+        pub rule processing_file() -> ModuleOrTop
         = "Semantic" _ "processing" _ "of" _ "module" _ module:ident() {
             ModuleOrTop::Module(module.into())
         }
-        /// Returns an *okay* flag which is false on errors.
+
+        /// Updates input parsing `mode` with current file, error...
         pub rule parsing(mode: &mut tlc::runtime::Parsing)
         = _ module:parsing_file() _ {
             mode.set_current_file(module);
@@ -494,6 +573,7 @@ peg::parser! {
         _ depth:pretty_usize() "." {
             tlc::code::Tlc::TlcSearchDepth { depth }
         }
+
         /// Returns the graph's outdegree, min, max and percentil.
         pub rule graph_outdegree() -> tlc::code::Tlc
         = "The" _ "average" _ "outdegree" _ "of" _ "the" _ "complete" _ "state" _ "graph" _ "is"
@@ -512,6 +592,7 @@ peg::parser! {
             }
         }
 
+        /// Progress statistics.
         pub rule progress_stats() -> tlc::code::Tlc
         = "Progress" _ "(" _ what_is_this:pretty_usize() _ ")" _ "at" _ date:date() _ ":"
         _ generated:pretty_usize() _ "states" _ "generated"
@@ -532,6 +613,7 @@ peg::parser! {
             }
         }
 
+        /// A int / bool / string constant in a counterexample.
         pub rule cex_value_cst() -> cex::value::Cst = quiet! {
             i:pretty_int() { i.into() }
             / b:(
@@ -541,6 +623,7 @@ peg::parser! {
             / s:dq_string() { s.into() }
         } / expected!("boolean, integer, double-quoted string")
 
+        /// A tuple value in a counterexample.
         pub rule cex_value_tuple() -> cex::value::Tuple
         = "<<" _ content:(
             head:cex_plain_value()
@@ -556,6 +639,7 @@ peg::parser! {
             cex::value::Tuple::new(content.unwrap_or_else(Vec::new)).into()
         }
 
+        /// A set value in a counterexample.
         pub rule cex_value_set() -> cex::value::Set
         = "{" _ content:(
             head:cex_plain_value()
@@ -571,6 +655,7 @@ peg::parser! {
             cex::value::Set::new(content.unwrap_or_else(Vec::new)).into()
         }
 
+        /// A map value in a counterexample.
         pub rule cex_value_smap() -> cex::value::SMap
         = "[" _ content:(
             head_ident:ident() _ "|->" _ head_value:cex_plain_value()
@@ -589,6 +674,7 @@ peg::parser! {
             content.unwrap_or_else(cex::value::SMap::new_empty)
         }
 
+        /// A bag value in a counterexample.
         pub rule cex_value_bag() -> cex::value::Bag
         = "(" _  content:(
             head_value:cex_plain_value() _ ":>" _ head_count:int()
@@ -607,6 +693,7 @@ peg::parser! {
             content.unwrap_or_else(cex::value::Bag::new_empty)
         }
 
+        /// A plain value, collection or constant.
         pub rule cex_plain_value() -> cex::value::Plain
         = cst:cex_value_cst() { cst.into() }
         / tuple:cex_value_tuple() { tuple.into() }
@@ -614,6 +701,7 @@ peg::parser! {
         / bag:cex_value_bag() { bag.into() }
         / set:cex_value_set() { set.into() }
 
+        /// A value or `null` (undefined value).
         pub rule cex_value() -> cex::Value
         = val:cex_plain_value() { val.into() }
         / "null" { cex::Value::Null }
@@ -633,6 +721,7 @@ peg::parser! {
             (n, info)
         }
 
+        /// Temporal cex: indicates the cex loops back to some state.
         pub rule back_to_state() -> usize
         = "Back" _ "to" _ "state" _ n:usize() _ ":" _ [_]* {
             n
@@ -641,11 +730,13 @@ peg::parser! {
             n
         }
 
+        /// Start of a state-variable value (`<ident> = <value>`) in a cex.
         pub rule cex_ident_value() -> (&'input str, cex::Value)
         = ("/\\" _)? id:ident() _ "=" _ val:cex_value() {
             (id, val)
         }
 
+        /// A state in a trace of states and its index.
         pub rule trace_state() -> Res<(usize, cex::State)>
         = index_and_info:state_info() id_val:(
             _ id_val:cex_ident_value() {
@@ -663,11 +754,13 @@ peg::parser! {
             Ok((index, state))
         }
 
+        /// Notification that an invariant was falsified.
         pub rule invariant_violated_behavior() -> &'input str
         = "Invariant" _ id:ident() _ "is" _ "violated" _ "." {
             id
         }
 
+        /// Status: TLC is done.
         pub rule finished() -> tlc::code::Status
         = "Finished" _ "in" _ time_ms:pretty_int() _ "ms" _ "at" _ "(" _ date:date() _ ")" {?
             let sub_sec_ms: Int = &time_ms % 1000;
@@ -683,12 +776,15 @@ peg::parser! {
                 })
         }
 
+        /// First line of an assertion failure (what failed).
         pub rule assertion_failure_1() = quiet! {
             _ "The" _ "first" _ "argument" _ "of" _
             _dontcare:ident() _ "evaluated" _ "to" _ "FALSE" _ ";"
             _ "the" _ "second" _ "argument" _ "was" _ ":" _
         }
         / expected!("assertion failure description")
+
+        /// Second line of an assertion failure (failure message).
         pub rule assertion_failure_2() -> Option<String> = quiet! {
             _ msg:dq_string() _ {
                 Some(msg.into())
@@ -696,11 +792,16 @@ peg::parser! {
         }
         / expected!("assertion failure message")
 
+        /// Message indicating the error is nested in some evaluation.
         pub rule error_nested_expressions_1()
         = _ "The" _ "error" _ "occurred" _ "when" _ "TLC" _ "was"
         _ "evaluating" _ "the" _ "nested" _
+
+        /// Continuation of [`error_nested_expressions_1`].
         pub rule error_nested_expressions_2()
         = _ "expressions" _ "at" _ "the" _ "following" _ "positions" _ ":" _
+
+        /// Location of the nested expressions.
         pub rule error_nested_expressions_location() -> source::FileSpan
         = _ _idx:usize() _ "." _ span:file_pos_span() _ {
             span

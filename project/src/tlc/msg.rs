@@ -1,10 +1,24 @@
 //! Handles messages from the TLC thread.
+//!
+//! Messages are constructed using everything in [`code`], in particular [`TopMsg`]'s `parse_start`
+//! and `parse_end` functions. Since TLC messages can be nested, main message type [`Msg`] stores
+//! the top-level message and its [`Elms`], *i.e.* a list of sub-messages. An element of this list
+//! is either a proper [`Msg`] or a plain `String`, the latter corresponding to content (text) for
+//! the top-level [`Msg`].
+//!
+//! [`code`]: tlc::code (TLC message code module)
+//! [`TopMsg`]: tlc::code::TopMsg (TopMsg in the TLC message code module)
 
-prelude!();
-
-use thread::{ChildCmd, ChildCmdCom};
+prelude!(
+    thread::{ChildCmd, ChildCmdCom},
+);
 
 /// Elements of a message: a list of plain strings or sub-messages.
+///
+/// [`Msg`] attaches `Elms` to a top-level message. Plain strings in the `elms` indicate content
+/// (text) for that top-level message, while [`Msg`]s are actual sub-messages.
+///
+/// I think content can only come before sub-messages, but I'm really not sure about this.
 #[derive(Debug, Clone)]
 pub struct Elms {
     pub elms: Vec<Either<String, Msg>>,
@@ -21,17 +35,21 @@ implem! {
     }
 }
 impl Elms {
+    /// Empty elements.
     pub const EMPTY: Self = Self { elms: Vec::new() };
+
     /// Constructor.
     pub fn new() -> Self {
-        Self { elms: vec![] }
+        Self::EMPTY.clone()
     }
+
     /// Iterator over the plain-string elements.
     pub fn plain_str_slices(&self) -> impl Iterator<Item = &str> {
         self.elms
             .iter()
             .filter_map(|either| either.as_ref().left().map(|s| s as &str))
     }
+
     /// Iterator over the plain-string elements, error on sub-messages.
     pub fn only_plain_str_slices(&self) -> impl Iterator<Item = Res<&str>> {
         self.elms.iter().map(|either| match either {
@@ -47,7 +65,7 @@ impl Elms {
         })
     }
 
-    /// Removes some plain text lines.
+    /// Removes some plain text lines at the beginning of the elements.
     ///
     /// True if lines were removed.
     pub fn starts_with_rm<I, BStr>(&mut self, lines: I) -> bool
@@ -103,13 +121,24 @@ impl Elms {
         Ok(acc.unwrap_or_else(String::new))
     }
 }
+
+/// This macro generates functions that extract a precise number of string elements of an [`Elms`].
+///
+/// These functions fail if the [`Elms`] do not contain **exactly** the number of lines expected,
+/// and no sub-[`Msg`].
+///
+/// That's convenient because **many** messages (errors in particular) are not structured besides
+/// a message-code opener, a message-code closer, and plain text in between. For these messages,
+/// parsing works on arbitrary natural language between the opener/closer.
 macro_rules! msg_elms_getter {
+    // this macro is recursive, that's the termination case
     () => {};
     (
         $(#[$meta:meta])*
         $name:ident -> Res<$out:ty> {
             $count:literal => ( $($sub:ident),+ $(,)? )
         }
+        // tail, this is a recursive macro
         $($tail:tt)*
     ) => {
         $(#[$meta])*
@@ -131,20 +160,26 @@ macro_rules! msg_elms_getter {
                 Ok(( $($sub),+ ))
             }
         }
+
+        // recursive call on the tail
         msg_elms_getter! { $($tail)* }
     };
 }
 impl Elms {
     msg_elms_getter! {
+        /// Unpacks an [`Elms`] containing exactly one plain string element.
         get_1_plain_str -> Res<&str> {
             1 => (str1)
         }
+        /// Unpacks an [`Elms`] containing exactly two plain string elements.
         get_2_plain_str -> Res<(&str, &str)> {
             2 => (str1, str2)
         }
+        /// Unpacks an [`Elms`] containing exactly three plain string elements.
         get_3_plain_str -> Res<(&str, &str, &str)> {
             3 => (str1, str2, str3)
         }
+        /// Unpacks an [`Elms`] containing exactly four plain string elements.
         get_4_plain_str -> Res<(&str, &str, &str, &str)> {
             4 => (str1, str2, str3, str4)
         }
@@ -152,6 +187,9 @@ impl Elms {
 }
 
 /// A qualified message from TLC.
+///
+/// The message code is optional because TLC only wraps messages in message-code opener/closer when
+/// it feels like it. When it does not, we do whatever we can to recognize what it's trying to say.
 #[derive(Debug, Clone)]
 pub struct Msg {
     /// Message code.
@@ -366,13 +404,21 @@ implem! {
 }
 
 /// A TLC communication channel.
+///
+/// Stores a two-way communication channel [`ChildCmdCom`] with the actual TLC process.
+///
+/// Distinguishes between `stdout` and `stderr` messages by storing a separate message stack for
+/// each. Message stacks are needed because TLC messages can be nested.
+///
+/// Also stores a `handle` on the child process so that it can kill it, and a list of all the errors
+/// that happened during the run.
 pub struct TlcHandler {
     /// Child channel.
     com: ChildCmdCom,
     /// Message from `stdout` under construction.
-    stdout_msg: Vec<(isize, tlc::msg::Elms)>,
+    stdout_msg: Vec<(Code, tlc::msg::Elms)>,
     /// Message from `stderr` under construction.
-    stderr_msg: Vec<(isize, tlc::msg::Elms)>,
+    stderr_msg: Vec<(Code, tlc::msg::Elms)>,
     /// Join handle for the child process.
     handle: thread::JoinHandle<Res<io::ExitStatus>>,
     /// Errors that happened during the run.
@@ -486,7 +532,7 @@ impl TlcHandler {
     }
 
     /// Creates a message to construct.
-    fn new_msg(&mut self, code: isize, from_stderr: bool) -> Res<()> {
+    fn new_msg(&mut self, code: Code, from_stderr: bool) -> Res<()> {
         let target = if from_stderr {
             &mut self.stderr_msg
         } else {
@@ -497,7 +543,7 @@ impl TlcHandler {
     }
 
     /// Finalizes a message under construction.
-    fn end_msg(&mut self, code: isize, from_stderr: bool) -> Res<Option<Msg>> {
+    fn end_msg(&mut self, code: Code, from_stderr: bool) -> Res<Option<Msg>> {
         let target = if from_stderr {
             &mut self.stderr_msg
         } else {

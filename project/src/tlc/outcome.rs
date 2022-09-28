@@ -1,8 +1,34 @@
 //! Gathers the different kinds of outcome.
+//!
+//! # Top-level outcome kinds
+//!
+//! The top-most outcome kinds are
+//! - [`Outcome`], stores
+//!   - run stats: runtime, start date;
+//!   - errors: a list of [`TlcError`]s;
+//!   - a [`ProcessOutcome`];
+//!   - an optional [`RunOutcome`].
+//! - [`ConciseOutcome`], a one-or-two-word description of what happened.
+//!
+//! [`Outcome`] is used to report what happened in detailed, while [`ConciseOutcome`] is much more
+//! abstract. In particular, matla tests specify an expected [`ConciseOutcome`] which matla
+//! compares with the actual [`ConciseOutcome`].
+//!
+//! # Relations between outcome kinds
+//!
+//! - [`ModeOutcomeKind`]: can be a [`FailedOutcome`];
+//! - [`ModeOutcome`]: stores a [`ModeOutcomeKind`];
+//! - [`RunOutcome`]: can be a [`FailedOutcome`];
+//! - [`Outcome`]: stores a [`ProcessOutcome`], an optional [`RunOutcome`], and zero or more
+//!       [`TlcError`]s.
+//!
+//! [`TlcError`]: tlc::err::TlcError (Type of TLC-level errors)
 
 prelude!();
 
 /// A failed outcome of a TLC run.
+///
+/// Used by [`ModeOutcomeKind`] and [`RunOutcome`].
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum FailedOutcome {
     /// A parse error with a description.
@@ -17,7 +43,7 @@ pub enum FailedOutcome {
     Plain(String),
 }
 impl FailedOutcome {
-    /// True if [`Self::Deadlock`].
+    /// True if [`FailedOutcome::Deadlock`].
     pub fn is_deadlock(&self) -> bool {
         *self == Self::Deadlock
     }
@@ -34,6 +60,119 @@ implem! {
                     Self::Plain(s) => write!(fmt, "<{}>", s),
                 }
             }
+        }
+    }
+}
+
+/// Variants of mode finalization.
+#[derive(Debug, Clone)]
+pub enum ModeOutcomeKind {
+    Unknown,
+    /// Nothing failed.
+    Success {
+        safe: bool,
+    },
+    /// Something caused a problem.
+    Problem {
+        outcome: FailedOutcome,
+        reported: bool,
+    },
+    /// A counterexample.
+    Cex(cex::Cex),
+}
+impl ModeOutcomeKind {
+    /// CEX variant constructor.
+    pub fn cex(cex: impl Into<cex::Cex>) -> Self {
+        Self::Cex(cex.into())
+    }
+
+    /// Triggers an action on an unsafe outcome.
+    pub fn map_unsafe<Out>(&self, action: impl FnOnce() -> Out) -> Option<Out> {
+        match self {
+            Self::Success { safe: false } => Some(action()),
+            Self::Success { safe: true } | Self::Cex(_) | Self::Problem { .. } | Self::Unknown => {
+                None
+            }
+        }
+    }
+    /// Map over a problem, if any.
+    pub fn map_problem<Out>(
+        &self,
+        action: impl FnOnce(&FailedOutcome, bool) -> Out,
+    ) -> Option<Out> {
+        match self {
+            Self::Success { .. } | Self::Cex(_) | Self::Unknown => None,
+            Self::Problem { outcome, reported } => Some(action(outcome, *reported)),
+        }
+    }
+
+    /// Text description of an outcome kind.
+    pub fn desc(&self) -> &'static str {
+        match self {
+            Self::Success { .. } => "success",
+            Self::Problem { .. } => "problem",
+            Self::Unknown => "unknown",
+            Self::Cex(_) => "cex",
+        }
+    }
+
+    /// Destructs a CEX, error if `self`'s not a [`Self::Cex`].
+    pub fn destruct_cex(self) -> Res<cex::Cex> {
+        match self {
+            Self::Cex(cex) => Ok(cex),
+            kind => bail!(
+                "expected `ModeOutcomeKind::Cex`, got `{}` variant",
+                kind.desc(),
+            ),
+        }
+    }
+}
+
+/// Outcome of a mode finalization.
+///
+/// Stores a `runtime_trace: Vec<String>` which is not used at the moment.
+#[derive(Debug, Clone)]
+pub struct ModeOutcome {
+    pub kind: ModeOutcomeKind,
+    pub runtime_trace: Vec<String>,
+}
+impl ModeOutcome {
+    /// Constructor.
+    pub fn new(kind: impl Into<ModeOutcomeKind>) -> Self {
+        Self {
+            kind: kind.into(),
+            runtime_trace: vec![],
+        }
+    }
+    /// Error variant constructor.
+    pub fn new_problem(outcome: FailedOutcome, reported: bool) -> Self {
+        Self::new(ModeOutcomeKind::Problem { outcome, reported })
+    }
+    /// CEX variant constructor.
+    pub fn new_cex(cex: impl Into<cex::Cex>) -> Self {
+        ModeOutcomeKind::cex(cex).into()
+    }
+    /// Success variant constructor.
+    pub fn new_success(safe: bool) -> Self {
+        ModeOutcomeKind::Success { safe }.into()
+    }
+    /// Safe variant constructor.
+    pub fn new_safe() -> Self {
+        Self::new_success(true)
+    }
+    /// Unsafe variant constructor.
+    pub fn new_unsafe() -> Self {
+        Self::new_success(false)
+    }
+}
+implem! {
+    for ModeOutcome {
+        Deref<Target = Vec<String>> {
+            |&self| &self.runtime_trace,
+            |&mut self| &mut self.runtime_trace,
+        }
+        From<ModeOutcomeKind> {
+            |kind| Self::new(kind),
         }
     }
 }
@@ -130,7 +269,7 @@ implem! {
     }
 }
 
-/// Outcome of a run, includes statistics and errors.
+/// Outcome of a run, including statistics and errors.
 #[derive(Debug, Clone)]
 pub struct Outcome {
     /// Process outcome.
@@ -197,7 +336,7 @@ implem! {
 
 /// Concise version of a run outcome.
 ///
-/// Corresponds to the final result reported to the user.
+/// Corresponds to the *final* result reported to the user.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ConciseOutcome<'msg> {
     Success,
@@ -307,116 +446,5 @@ impl<'msg> ConciseOutcome<'msg> {
             )
         };
         Ok(slf)
-    }
-}
-
-/// Variants of mode finalization.
-#[derive(Debug, Clone)]
-pub enum ModeOutcomeKind {
-    Unknown,
-    /// Nothing failed.
-    Success {
-        safe: bool,
-    },
-    /// Something caused a problem.
-    Problem {
-        outcome: FailedOutcome,
-        reported: bool,
-    },
-    /// A counterexample.
-    Cex(cex::Cex),
-}
-impl ModeOutcomeKind {
-    /// CEX variant constructor.
-    pub fn cex(cex: impl Into<cex::Cex>) -> Self {
-        Self::Cex(cex.into())
-    }
-
-    /// Triggers an action on an unsafe outcome.
-    pub fn map_unsafe<Out>(&self, action: impl FnOnce() -> Out) -> Option<Out> {
-        match self {
-            Self::Success { safe: false } => Some(action()),
-            Self::Success { safe: true } | Self::Cex(_) | Self::Problem { .. } | Self::Unknown => {
-                None
-            }
-        }
-    }
-    /// Map over a problem, if any.
-    pub fn map_problem<Out>(
-        &self,
-        action: impl FnOnce(&FailedOutcome, bool) -> Out,
-    ) -> Option<Out> {
-        match self {
-            Self::Success { .. } | Self::Cex(_) | Self::Unknown => None,
-            Self::Problem { outcome, reported } => Some(action(outcome, *reported)),
-        }
-    }
-
-    /// Text description of an outcome kind.
-    pub fn desc(&self) -> &'static str {
-        match self {
-            Self::Success { .. } => "success",
-            Self::Problem { .. } => "problem",
-            Self::Unknown => "unknown",
-            Self::Cex(_) => "cex",
-        }
-    }
-
-    /// Destructs a CEX, error if `self`'s not a [`Self::Cex`].
-    pub fn destruct_cex(self) -> Res<cex::Cex> {
-        match self {
-            Self::Cex(cex) => Ok(cex),
-            kind => bail!(
-                "expected `ModeOutcomeKind::Cex`, got `{}` variant",
-                kind.desc(),
-            ),
-        }
-    }
-}
-
-/// Outcome of a mode finalization.
-#[derive(Debug, Clone)]
-pub struct ModeOutcome {
-    pub kind: ModeOutcomeKind,
-    pub runtime_trace: Vec<String>,
-}
-impl ModeOutcome {
-    /// Constructor.
-    pub fn new(kind: impl Into<ModeOutcomeKind>) -> Self {
-        Self {
-            kind: kind.into(),
-            runtime_trace: vec![],
-        }
-    }
-    /// Error variant constructor.
-    pub fn new_problem(outcome: FailedOutcome, reported: bool) -> Self {
-        Self::new(ModeOutcomeKind::Problem { outcome, reported })
-    }
-    /// CEX variant constructor.
-    pub fn new_cex(cex: impl Into<cex::Cex>) -> Self {
-        ModeOutcomeKind::cex(cex).into()
-    }
-    /// Success variant constructor.
-    pub fn new_success(safe: bool) -> Self {
-        ModeOutcomeKind::Success { safe }.into()
-    }
-    /// Safe variant constructor.
-    pub fn new_safe() -> Self {
-        Self::new_success(true)
-    }
-    /// Unsafe variant constructor.
-    pub fn new_unsafe() -> Self {
-        Self::new_success(false)
-    }
-}
-implem! {
-    for ModeOutcome {
-        Deref<Target = Vec<String>> {
-            |&self| &self.runtime_trace,
-            |&mut self| &mut self.runtime_trace,
-        }
-        From<ModeOutcomeKind> {
-            |kind| Self::new(kind),
-        }
     }
 }
