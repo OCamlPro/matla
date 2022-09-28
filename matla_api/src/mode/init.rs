@@ -239,3 +239,67 @@ impl Run {
         Ok(())
     }
 }
+
+#[cfg(feature = "with_clap")]
+mod cla_spec {
+    prelude!();
+
+    /// Init subcommand name.
+    const CMD_NAME: &str = "init";
+    /// Do not change/create a `.gitignore`.
+    const NO_GITIGNORE_KEY: &str = "INIT_NO_GITIGNORE_KEY";
+    /// Create project directory if needed.
+    const NEW_KEY: &str = "INIT_NEW_KEY";
+    /// Do not create `Matla.tla`.
+    const NO_MATLA_KEY: &str = "INIT_NO_MATLA_KEY";
+    /// Key for the path to the project directory.
+    const PROJECT_PATH_KEY: &str = "RUN_PROJECT_PATH_KEY";
+    /// Default project directory.
+    const PROJECT_PATH_DEFAULT: &str = ".";
+
+    impl mode::ClaMode for super::Run {
+        const SUBCOMMAND_IDENT: &'static str = CMD_NAME;
+        const PREREQ: mode::ClaModePrereq = mode::ClaModePrereq::PreProject;
+
+        fn build_command(cmd: clap::Command<'static>) -> clap::Command<'static> {
+            cmd.about("Initializes an existing directory as a matla project.")
+                .long_about(
+                    "By default, matla initializes an *existing* project directory by adding \
+            the target (build) directory to the project's `.gitignore`, and creating \
+            the `Matla` module.",
+                )
+                .args(&[
+                    clap::Arg::new(NO_GITIGNORE_KEY)
+                        .long("no_gitignore")
+                        .help("disables `.gitignore` creation/modification"),
+                    clap::Arg::new(NEW_KEY)
+                        .long("new")
+                        .help("create project directory if needed"),
+                    clap::Arg::new(NO_MATLA_KEY)
+                        .long("no_matla_module")
+                        .help("do not create a file for the `Matla` module"),
+                    clap::Arg::new(PROJECT_PATH_KEY)
+                        .help("Path to the project directory to initialize")
+                        .index(1)
+                        .default_value(PROJECT_PATH_DEFAULT)
+                        .value_name(crate::cla::utils::val_name::DIR),
+                    crate::cla::top::project_path_arg().hide(true),
+                ])
+        }
+        fn build(matches: &clap::ArgMatches) -> Res<Self> {
+            let no_gitignore = matches.is_present(NO_GITIGNORE_KEY);
+            let new = matches.is_present(NEW_KEY);
+            let no_matla = matches.is_present(NO_MATLA_KEY);
+            let project_path = io::PathBuf::from(
+                matches
+                    .value_of(PROJECT_PATH_KEY)
+                    .expect("argument with default value"),
+            );
+            Self::new(project_path, no_gitignore, new, no_matla)
+        }
+        fn run(self) -> Res<Option<i32>> {
+            self.launch()?;
+            Ok(None)
+        }
+    }
+}

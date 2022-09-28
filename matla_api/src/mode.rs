@@ -17,122 +17,206 @@ pub use self::requires_clap::*;
 mod requires_clap {
     prelude!();
 
-    /// Generates all the subcommands for all the modes.
-    pub fn all_subcommands() -> [clap::Command<'static>; 8] {
-        macro_rules! augmented_array {
-            ( $($sub:expr),* $(,)? ) => (
-                [$( cla::utils::sub_cmd::augment($sub), )*]
-            );
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub enum ClaModePrereq {
+        /// Mode runs before loading user config.
+        PreUser,
+        /// Mode runs after loading user config, but before loading project config.
+        PreProject,
+        /// Mode runs after loading user and project config.
+        Project,
+    }
+    impl ClaModePrereq {
+        pub fn is_pre_user(self) -> bool {
+            self == Self::PreUser
         }
-        augmented_array!(
-            super::clean::cla::subcommand(),
-            super::init::cla::subcommand(),
-            super::run::cla::subcommand(),
-            super::setup::cla::subcommand(),
-            super::testing::cla::subcommand(),
-            super::tlc::cla::subcommand(),
-            super::uninstall::cla::subcommand(),
-            super::update::cla::subcommand(),
-        )
+        pub fn is_pre_project(self) -> bool {
+            self == Self::PreProject
+        }
     }
 
-    /// Wraps the result of `action()` in a `Some(_)`.
-    macro_rules! wrap_try {
-        ($e:expr) => {
-            match $e {
-                Ok(res) => res,
-                Err(e) => return Some(Err(e.into())),
-            }
-        };
+    /// Trait implemented by modes.
+    ///
+    /// Causes to implement [`ClaModeSpec`] which is what the top-level actually uses. The auto-impl
+    /// augments the command with generic flags that should be available everywhere, such as the
+    /// internal log level flag.
+    ///
+    /// Auto-impl also makes sure to account for these flags once
+    pub trait ClaMode: Sized {
+        const SUBCOMMAND_IDENT: &'static str;
+        const PREREQ: ClaModePrereq;
+        /// For error-reporting.
+        const DESC: &'static str = Self::SUBCOMMAND_IDENT;
+        fn build_command(cmd: clap::Command<'static>) -> clap::Command<'static>;
+        fn build(matches: &clap::ArgMatches) -> Res<Self>;
+        fn run(self) -> Res<Option<i32>>;
     }
 
-    /// Given a clap module in `mode::`, calls function `cla::check_matches` of that module, and
-    /// launches the result.
-    macro_rules! check_launch_else_none {
-        ( $matches:expr => ) => (
-            return None
-        );
-        ( $matches:expr =>
-            // name of the module
-            $mod_name:ident
-            // optional alias for the module, used for error reporting
-            // if none, use `stringify!($mod_name)`
-            $( ($name:expr) )?
-            // optional custom result handler, expected to yield `Result<Option<i32>>` (exit code)
-            $(
-                where
-                    |$res:ident| $action:expr
-            )?
-            $(, $($tail:tt)* )?
-        ) => {
-            if let Some(sub) = mode::$mod_name::cla::check_matches($matches) {
-                #[allow(unused_assignments, unused_mut)]
-                let mut desc =
-                    stringify!($mod_name);
+    // /// Mode specification, automatically implemented for any type implementing [`ClaMode`].
+    // pub trait ClaModeSpec {
+    //     const SUBCOMMAND_IDENT: &'static str;
+    //     const IS_PROJECT_MODE: bool;
+    //     const DESC: &'static str;
+    //     fn add_subcommand(cmd: clap::Command<'static>) -> clap::Command<'static>;
+    //     fn try_run(matches: &clap::ArgMatches) -> Option<Res<Option<i32>>>;
+    // }
+
+    // impl<T> ClaModeSpec for T
+    // where
+    //     T: ClaMode,
+    // {
+    //     const SUBCOMMAND_IDENT: &'static str = Self::SUBCOMMAND_IDENT;
+    //     const IS_PROJECT_MODE: bool = Self::IS_PROJECT_MODE;
+    //     const DESC: &'static str = Self::DESC;
+
+    //     fn add_subcommand(cmd: clap::Command<'static>) -> clap::Command<'static> {
+    //         let mut sub = clap::Command::new(Self::SUBCOMMAND_IDENT);
+    //         sub = Self::build_command(sub);
+    //         // add generic flags
+    //         sub = cla::utils::sub_cmd::augment(sub);
+    //         cmd.subcommand(sub)
+    //     }
+
+    //     fn try_run(matches: &clap::ArgMatches) -> Option<Res<Option<i32>>> {
+    //         // account for generic flags
+    //         match cla::utils::sub_cmd::check_matches(matches) {
+    //             Ok(()) => (),
+    //             Err(e) => return Some(Err(e)),
+    //         }
+    //         let slf = match Self::build(matches)
+    //             .with_context(|| anyhow!("building `{}` mode", Self::DESC))
+    //         {
+    //             Ok(slf) => slf,
+    //             Err(e) => return Some(Err(e)),
+    //         };
+    //         Some(slf.run())
+    //     }
+    // }
+
+    /// Generates the input enum and some helpers.
+    ///
+    /// # Input
+    ///
+    /// An enum definition with nullary variants. Variant identifiers are followed by `for
+    /// $mode:ident` which must be the name of a mode-submodule with a `Run` type implementing
+    /// [`ClaMode`] (and therefore [`ClaModeSpec`]).
+    ///
+    /// # Generates
+    ///
+    /// The enum `$ename` with variants `$variant(super::$mode::Run)`.
+    ///
+    /// - `list_all` returns a list of all variants of `$ename`;
+    /// - `of_subcommand` returns the mode associated with a given subcommand;
+    /// - `$ename` lifts all functions of [`ClaModeSpec`] from its variants.
+    macro_rules! enum_gather_specs {
+        (
+            $(#[$emeta:meta])*
+            $evis:vis enum $ename:ident {
                 $(
-                    desc = $name as &str;
-                )?
-                let sub = wrap_try! {
-                    sub.with_context(
-                        || format!("`{}` mod initialization failed", desc)
-                    )
-                };
-                #[allow(unused_variables)]
-                let sub_res = wrap_try! {
-                    sub.launch().with_context(
-                        || format!("failure while running `{}` mode", desc)
-                    )
-                };
-                #[allow(unused_assignments, unused_mut)]
-                let mut real_res = Ok(None);
-                $(
-                    let $res = sub_res;
-                    real_res = $action;
-                )?
-                return Some(real_res);
+                    $(#[$vmeta:meta])*
+                    $variant:ident for $mode:ident
+                ),*
+                $(,)?
             }
-            check_launch_else_none!($matches => $($($tail)*)?)
-        };
-    }
+        ) => (
+            $(#[$emeta])*
+            #[derive(Debug, Clone)]
+            $evis enum $ename {
+                $( $(#[$vmeta])* $variant(super::$mode::Run) , )*
+            }
 
-    /// Runs the mode specified by `matches`, if any.
-    ///
-    /// Only considers modes that must run **before** user configuration loading.
-    pub fn try_pre_user_load(matches: &clap::ArgMatches) -> Option<Res<Option<i32>>> {
-        check_launch_else_none!(matches =>
-            setup,
-            uninstall,
+            impl $ename {
+                pub fn prereq(&self) -> ClaModePrereq {
+                    match self {
+                        $(
+                            Self::$variant(_) => super::$mode::Run::PREREQ,
+                        )*
+                    }
+                }
+
+                pub fn desc(&self) -> &'static str {
+                    match self {
+                        $(
+                            Self::$variant(_) => super::$mode::Run::DESC,
+                        )*
+                    }
+                }
+
+                // pub fn build_command(self, cmd: clap::Command<'static>) -> clap::Command<'static> {
+                //     match self {
+                //         $(
+                //             Self::$variant(_) => super::$mode::Run::build_command(cmd),
+                //         )*
+                //     }
+                // }
+
+                // pub fn add_subcommand(self, cmd : clap::Command<'static>) -> clap::Command<'static> {
+                //     let mut sub = clap::Command::new(self.subcommand_ident());
+                //     sub = self.build_command(sub);
+                //     // add generic flags
+                //     sub = cla::utils::sub_cmd::augment(sub);
+                //     cmd.subcommand(sub)
+                // }
+                pub fn add_all_subcommands(mut cmd: clap::Command<'static>) -> clap::Command<'static> {
+                    $(
+                        let mut sub = clap::Command::new(super::$mode::Run::SUBCOMMAND_IDENT);
+                        sub = super::$mode::Run::build_command(sub);
+                        // add generic flags
+                        sub = cla::utils::sub_cmd::augment(sub);
+                        cmd = cmd.subcommand(sub);
+                    )*
+                    cmd
+                }
+
+                pub fn from_subcommand(matches: &clap::ArgMatches) -> Res<Self> {
+                    let (sub, matches) = matches.subcommand().
+                        ok_or_else(|| anyhow!("expected matla command, found nothing"))?;
+                    $(
+                        if sub == super::$mode::Run::SUBCOMMAND_IDENT {
+                            // account for generic flags
+                            cla::utils::sub_cmd::check_matches(matches)
+                                .with_context(|| anyhow!("handling arguments for command `{}`", sub))?;
+                            let mode = super::$mode::Run::build(matches)
+                                .with_context(|| anyhow!("building `{}` mode", super::$mode::Run::DESC))?;
+                            return Ok(Self::$variant(mode))
+                        }
+                    )*
+                    bail!("unexpected command `{}`", sub)
+                }
+
+                pub fn run(self) -> Res<Option<i32>> {
+                    match self {
+                        $(
+                            Self::$variant(mode) =>
+                                mode.run().with_context(|| anyhow!(
+                                    "failure while running `{}` mode", super::$mode::Run::DESC
+                                )),
+                        )*
+                    }
+                }
+            }
         );
     }
 
-    /// Runs the mode specified by `matches`, if any.
-    ///
-    /// Only considers modes that must run **before** user configuration loading.
-    pub fn try_pre_project_load(matches: &clap::ArgMatches) -> Option<Res<Option<i32>>> {
-        check_launch_else_none!(matches =>
-            init,
-            update,
-            tlc where
-                |res| {
-                    let code = wrap_try!(res.code().ok_or_else(
-                        || anyhow!("failed to retrieve exit code of TLC process")
-                    ));
-                    Ok(Some(code))
-                },
-        );
-    }
-
-    /// Runs the mode specified by `matches`, if any.
-    ///
-    /// Only considers modes that must run **after** user configuration loading.
-    pub fn try_post_loading(matches: &clap::ArgMatches) -> Option<Res<Option<i32>>> {
-        check_launch_else_none!(matches =>
-            run where
-                |code| {
-                    Ok(Some(code))
-                },
-            testing ("test"),
-            clean,
-        );
+    enum_gather_specs! {
+        /// Gathers all modes.
+        pub enum Mode {
+            /// Project cleaning mode.
+            Clean for clean,
+            /// Project init mode.
+            Init for init,
+            /// Run mode.
+            Run for run,
+            /// Setup mode.
+            Setup for setup,
+            /// Test mode.
+            Test for testing,
+            /// TLC mode, only runs TLC.
+            Tlc for tlc,
+            /// Uninstals matla.
+            Uninstall for uninstall,
+            /// Updates the TLA+ toolchain.
+            Update for update,
+        }
     }
 }

@@ -380,3 +380,50 @@ impl Run {
         Ok(())
     }
 }
+
+#[cfg(feature = "with_clap")]
+mod cla_spec {
+    prelude!();
+
+    /// Setup subcommand name.
+    const CMD_NAME: &str = "setup";
+    /// Standalone mode key.
+    const STANDALONE_KEY: &str = "SETUP_STANDALONE_KEY";
+    /// From-env mode key.
+    const FROM_ENV_KEY: &str = "SETUP_FROM_ENV_KEY";
+    /// Overwrite mode key.
+    const OVERWRITE_KEY: &str = "SETUP_OVERWRITE_KEY";
+
+    impl mode::ClaMode for super::Run {
+        const SUBCOMMAND_IDENT: &'static str = CMD_NAME;
+        const PREREQ: mode::ClaModePrereq = mode::ClaModePrereq::PreUser;
+
+        fn build_command(cmd: clap::Command<'static>) -> clap::Command<'static> {
+            cmd.about("Performs this initial matla setup, required before running matla.")
+                .args(&[
+                    clap::Arg::new(STANDALONE_KEY).long("standalone").short('s').help(
+                        "Download the latest TLA toolbox to user directory and automatically use it",
+                    ),
+                    clap::Arg::new(FROM_ENV_KEY)
+                        .long("from_env")
+                        .help("Retrieve TLA toolbox path from the environment")
+                        .conflicts_with(STANDALONE_KEY),
+                    clap::Arg::new(OVERWRITE_KEY)
+                        .long("overwrite")
+                        .short('o')
+                        .help("Automatically overwrite config files when they exists"),
+                    crate::cla::top::project_path_arg().hide(true),
+                ])
+        }
+        fn build(matches: &clap::ArgMatches) -> Res<Self> {
+            let standalone = matches.is_present(STANDALONE_KEY);
+            let from_env = matches.is_present(FROM_ENV_KEY);
+            let overwrite = matches.is_present(OVERWRITE_KEY);
+            Self::new(standalone, from_env, overwrite)
+        }
+        fn run(self) -> Res<Option<i32>> {
+            self.launch()?;
+            Ok(None)
+        }
+    }
+}

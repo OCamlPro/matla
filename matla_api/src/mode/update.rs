@@ -71,3 +71,28 @@ impl Run {
         Ok(())
     }
 }
+
+#[cfg(feature = "with_clap")]
+mod cla_spec {
+    prelude!();
+
+    /// Update subcommand name.
+    const CMD_NAME: &str = "update";
+
+    impl mode::ClaMode for super::Run {
+        const SUBCOMMAND_IDENT: &'static str = CMD_NAME;
+        const PREREQ: mode::ClaModePrereq = mode::ClaModePrereq::Project;
+
+        fn build_command(cmd: clap::Command<'static>) -> clap::Command<'static> {
+            cmd.about("Updates the `tla2tools` jar in the matla user directory.")
+                .args(&[crate::cla::top::project_path_arg().hide(true)])
+        }
+        fn build(_matches: &clap::ArgMatches) -> Res<Self> {
+            Self::new()
+        }
+        fn run(self) -> Res<Option<i32>> {
+            self.launch()?;
+            Ok(None)
+        }
+    }
+}

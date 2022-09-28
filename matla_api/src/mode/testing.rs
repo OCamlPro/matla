@@ -224,3 +224,87 @@ impl Run {
         Ok((passed, total))
     }
 }
+
+#[cfg(feature = "with_clap")]
+mod cla_spec {
+    prelude!();
+
+    /// Test subcommand name.
+    const CMD_NAME: &str = "test";
+    /// Key for release mode.
+    const RELEASE_KEY: &str = "TEST_RELEASE_KEY";
+    /// Key for running tests in parallel.
+    const RUN_PARALLEL_KEY: &str = "TEST_RUN_PARALLEL_KEY";
+    /// Default value for running tests in parallel.
+    const RUN_PARALLEL_DEFAULT: &str = crate::cla::utils::BOOL_FALSE;
+    /// Key for the modules to run.
+    const MAIN_MODULES_KEY: &str = "TEST_MAIN_MODULES_KEY";
+
+    impl mode::ClaMode for super::Run {
+        const SUBCOMMAND_IDENT: &'static str = CMD_NAME;
+        const PREREQ: mode::ClaModePrereq = mode::ClaModePrereq::Project;
+
+        fn build_command(cmd: clap::Command<'static>) -> clap::Command<'static> {
+            cmd.about("Run the tests of a project.")
+                .long_about(testing::integration::explain::test_conf())
+                .args(&[
+                    crate::cla::top::project_path_arg(),
+                    clap::Arg::new(RUN_PARALLEL_KEY)
+                        .help("(De)activates running tests concurrently")
+                        .long("parallel")
+                        .takes_value(true)
+                        .value_name(crate::cla::utils::val_name::BOOL)
+                        .default_value(RUN_PARALLEL_DEFAULT)
+                        .validator(|arg| crate::cla::utils::validate_bool(&arg).map(|_| ())),
+                    clap::Arg::new(RELEASE_KEY)
+                        .help(
+                            "Activates release mode (deactivates debug checks in the Matla module)",
+                        )
+                        .long_help(
+                            "\
+                        Release mode deactivates assertions in the `dbg` sub-module of \
+                        the `Matla` module for efficiency. This only applies if `matla` \
+                        generated a `Matla.tla` file in your project directory with \
+                        `matla init`. Otherwise, debug/release modes are the same.\
+                    ",
+                        )
+                        .long("release"),
+                    clap::Arg::new(MAIN_MODULES_KEY)
+                        .help(
+                            "\
+                            One ore more legal test module name(s) to run, \
+                            if none then all tests will run\
+                        ",
+                        )
+                        .value_name(crate::cla::utils::val_name::MODULES)
+                        .takes_value(true)
+                        .multiple_occurrences(true),
+                ])
+        }
+        fn build(matches: &clap::ArgMatches) -> Res<Self> {
+            let release = matches.is_present(RELEASE_KEY);
+            let parallel = {
+                let arg = matches
+                    .value_of(RUN_PARALLEL_KEY)
+                    .expect("argument with default value");
+                crate::cla::utils::validate_bool(arg)
+                    .map_err(Error::msg)
+                    .with_context(|| anyhow!("failed to parse argument despite validation"))?
+            };
+            let filter = if let Some(vals) = matches.values_of(MAIN_MODULES_KEY) {
+                let mut filter = testing::Filter::new();
+                for val in vals {
+                    filter.add(val)?;
+                }
+                Some(filter)
+            } else {
+                None
+            };
+            Self::new(filter, release, parallel)
+        }
+        fn run(self) -> Res<Option<i32>> {
+            self.launch()?;
+            Ok(None)
+        }
+    }
+}

@@ -175,6 +175,12 @@ pub mod top {
             .expect("unreachable: CLA value with default")
             .into()
     }
+
+    /// Sets the project path in [`conf::top_cla`].
+    pub fn set_project_path(matches: &clap::ArgMatches) -> Res<()> {
+        let path = extract_project_path(matches);
+        conf::top_cla::set_project_path(&path)
+    }
     /// Retrieves the project path from some matches, if present.
     pub fn get_project_path(matches: &clap::ArgMatches) -> Option<io::PathBuf> {
         // Check this first to make sure `PATH_KEY` is defined, other the code below will panic.
@@ -210,7 +216,7 @@ pub mod top {
     /// Top-level CLAP command.
     pub fn command(cmd: clap::Command<'static>) -> clap::Command<'static> {
         let cmd = super::utils::logger::add(cmd);
-        cmd.args(&[
+        let cmd = cmd.args(&[
             // clap::Arg::new(VERB_KEY)
             //     .short('v')
             //     .multiple_occurrences(true)
@@ -232,8 +238,8 @@ pub mod top {
                 .default_value(COLOR_KEY_DEFAULT)
                 .value_name(cla::utils::BOOL_VALUES)
                 .validator(|arg| cla::utils::validate_bool(&arg).map(|_| ())),
-        ])
-        .subcommands(mode::all_subcommands())
+        ]);
+        mode::Mode::add_all_subcommands(cmd)
     }
 
     /// Performs top-level CLAP and returns the matches.
@@ -269,7 +275,7 @@ pub mod top {
         Ok(())
     }
     pub fn init_from_str(cmd: clap::Command<'static>, clap: &'static str) -> Res<clap::ArgMatches> {
-        let matches = cla::top::command(cmd).get_matches_from(
+        let matches = command(cmd).get_matches_from(
             clap.split(|c: char| c.is_whitespace())
                 .filter(|arg| !arg.is_empty()),
         );

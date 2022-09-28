@@ -31,7 +31,7 @@ fn inner_main() -> Res<Option<i32>> {
         .version(clap::crate_version!())
         .about(clap::crate_description!())
         .author(clap::crate_authors!());
-    let init = session::from_env_clas(cmd)?;
+    let mode = matla_api::mode_from_env_clas(cmd)?;
 
     // Set log-level.
     let log_level = conf::top_cla::log_level().context("retrieving cla log level")?;
@@ -39,19 +39,24 @@ fn inner_main() -> Res<Option<i32>> {
         simple_logger::init_with_level(level).context("during simple_logger init")?;
     }
 
-    if let Some(res) = init.try_run() {
-        return res;
+    let prereq = mode.prereq();
+
+    if prereq.is_pre_user() {
+        return mode.run();
     }
 
-    let user_loaded = init.load_user_conf()?;
-    if let Some(res) = user_loaded.try_run() {
-        return res;
+    matla_api::load_user_conf()?;
+
+    if prereq.is_pre_project() {
+        return mode.run();
     }
 
-    let project_loaded = user_loaded.load_project_conf()?;
-    if let Some(res) = project_loaded.try_run() {
-        return res;
+    let exists = matla_api::load_project_conf()?;
+
+    if !exists {
+        let path = conf::top_cla::project_path()?;
+        bail!("project path `{}`", path.display())
     }
 
-    Ok(None)
+    mode.run()
 }
