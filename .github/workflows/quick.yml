@@ -2,7 +2,7 @@ name: Quick Testing
 
 on:
   push:
-    branches: main
+    branches: master
 
 env:
   CARGO_TERM_COLOR: always

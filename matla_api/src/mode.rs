@@ -37,11 +37,9 @@ mod requires_clap {
 
     /// Trait implemented by modes.
     ///
-    /// Causes to implement [`ClaModeSpec`] which is what the top-level actually uses. The auto-impl
-    /// augments the command with generic flags that should be available everywhere, such as the
-    /// internal log level flag.
-    ///
-    /// Auto-impl also makes sure to account for these flags once
+    /// (Private) macro `enum_gather_specs` (manually) gathers all modes implementing this trait and
+    /// builds the higher-level clap workflow. The macro can add flags for options that we want to
+    /// appear both before and after the clap command, such as verbosity.
     pub trait ClaMode: Sized {
         const SUBCOMMAND_IDENT: &'static str;
         const PREREQ: ClaModePrereq;
@@ -51,47 +49,6 @@ mod requires_clap {
         fn build(matches: &clap::ArgMatches) -> Res<Self>;
         fn run(self) -> Res<Option<i32>>;
     }
-
-    // /// Mode specification, automatically implemented for any type implementing [`ClaMode`].
-    // pub trait ClaModeSpec {
-    //     const SUBCOMMAND_IDENT: &'static str;
-    //     const IS_PROJECT_MODE: bool;
-    //     const DESC: &'static str;
-    //     fn add_subcommand(cmd: clap::Command<'static>) -> clap::Command<'static>;
-    //     fn try_run(matches: &clap::ArgMatches) -> Option<Res<Option<i32>>>;
-    // }
-
-    // impl<T> ClaModeSpec for T
-    // where
-    //     T: ClaMode,
-    // {
-    //     const SUBCOMMAND_IDENT: &'static str = Self::SUBCOMMAND_IDENT;
-    //     const IS_PROJECT_MODE: bool = Self::IS_PROJECT_MODE;
-    //     const DESC: &'static str = Self::DESC;
-
-    //     fn add_subcommand(cmd: clap::Command<'static>) -> clap::Command<'static> {
-    //         let mut sub = clap::Command::new(Self::SUBCOMMAND_IDENT);
-    //         sub = Self::build_command(sub);
-    //         // add generic flags
-    //         sub = cla::utils::sub_cmd::augment(sub);
-    //         cmd.subcommand(sub)
-    //     }
-
-    //     fn try_run(matches: &clap::ArgMatches) -> Option<Res<Option<i32>>> {
-    //         // account for generic flags
-    //         match cla::utils::sub_cmd::check_matches(matches) {
-    //             Ok(()) => (),
-    //             Err(e) => return Some(Err(e)),
-    //         }
-    //         let slf = match Self::build(matches)
-    //             .with_context(|| anyhow!("building `{}` mode", Self::DESC))
-    //         {
-    //             Ok(slf) => slf,
-    //             Err(e) => return Some(Err(e)),
-    //         };
-    //         Some(slf.run())
-    //     }
-    // }
 
     /// Generates the input enum and some helpers.
     ///

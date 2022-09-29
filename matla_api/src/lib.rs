@@ -9,9 +9,9 @@
 //! - [`testing`] for test management.
 //!
 //! This crate has a `with_clap` feature (on by default) that activates CLAP-related features over
-//! modes. It also gives access to the [`session`] module, which provides a session type encoding
-//! matla's loading stages and what mode is legal to run when. Matla's binary crate is a shallow
-//! wrapper around the session type.
+//! modes. The top-level clap functions are `mode_from_str_clas` and `mode_from_env_clas` which
+//! build the mode asked by CLAs. Note that modes may require loading user/project configuration
+//! before running. This is communicated by a `mode::ClaModePrereq`.
 //!
 //! This library also provides [`mode`]s, which perform matla's various tasks: [`mode::run`],
 //! [`mode::testing`], [`mode::setup`]...
