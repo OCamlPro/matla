@@ -247,7 +247,13 @@ pub mod top {
     pub fn init_from_matches(matches: &clap::ArgMatches) -> Res<()> {
         let log_level = super::utils::logger::of_matches(matches);
         let color = {
-            let from_user = matches.is_present(cla::top::COLOR_KEY);
+            let from_user = {
+                use clap::ValueSource::*;
+                match matches.value_source(cla::top::COLOR_KEY) {
+                    Some(EnvVariable) | Some(CommandLine) => true,
+                    Some(DefaultValue) | Some(_) | None => false,
+                }
+            };
             let val = cla::utils::validate_bool(
                 matches
                     .value_of(cla::top::COLOR_KEY)
