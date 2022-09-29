@@ -40,6 +40,8 @@ pub struct TopCla {
     pub portable: bool,
     /// Log level.
     pub log_level: log::LevelFilter,
+    /// Verbosity level.
+    pub verb_level: usize,
     /// Path to the project directory.
     pub project_path: io::PathBuf,
 }
@@ -59,19 +61,34 @@ impl TopCla {
             color: false,
             portable: false,
             log_level: log::LevelFilter::Trace,
+            verb_level: 0,
             project_path: ".".into(),
         }
     }
 }
 
-/// Accesses the top-level CLAP verbosity argument.
+/// Accesses the top-level CLAP info verbosity argument.
+pub fn verb_level() -> Res<usize> {
+    try_read(|top| top.verb_level)
+}
+/// Sets the top-level CLAP verbosity argument.
+pub fn set_verb_level(verb: usize) -> Res<()> {
+    try_write(|top| top.verb_level = verb)
+}
+/// Applies some action to the top-level CLAP verbosity argument.
+pub fn verb_level_do(action: impl FnOnce(usize) -> usize) -> Res<()> {
+    try_write(|top| top.verb_level = action(top.verb_level))
+}
+
+/// Accesses the top-level CLAP log verbosity argument.
 pub fn log_level() -> Res<log::LevelFilter> {
     try_read(|top| top.log_level)
 }
-/// Sets the top-level CLAP verbosity argument.
+/// Sets the top-level CLAP log verbosity argument.
 pub fn set_log_level(level: log::LevelFilter) -> Res<()> {
     try_write(|top| top.log_level = level)
 }
+
 /// Accesses the top-level CLAP color argument.
 pub fn color() -> Res<bool> {
     try_read(|top| top.color)
@@ -80,6 +97,7 @@ pub fn color() -> Res<bool> {
 pub fn set_color(color: bool) -> Res<()> {
     try_write(|top| top.color = color)
 }
+
 /// Accesses the top-level CLAP portable argument.
 pub fn portable() -> Res<bool> {
     try_read(|top| top.portable)
@@ -88,6 +106,7 @@ pub fn portable() -> Res<bool> {
 pub fn set_portable(portable: bool) -> Res<()> {
     try_write(|top| top.portable = portable)
 }
+
 /// Accesses the top-level CLAP project path argument.
 pub fn project_path() -> Res<io::PathBuf> {
     try_read(|top| top.project_path.clone())

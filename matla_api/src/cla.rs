@@ -59,28 +59,62 @@ pub mod utils {
         pub const U64_OR_DEFAULT: &str = "[Dd]efault|_|INT ≥ 0";
     }
 
+    pub fn if_flags_free_add(
+        cmd: clap::Command<'static>,
+        arg: impl FnOnce() -> clap::Arg<'static>,
+        short: Option<char>,
+        long: Option<&'static str>,
+    ) -> (clap::Command<'static>, bool) {
+        let (s, l) = cmd.get_arguments().fold((short, long), |(s, l), cmd| {
+            let s = if s.is_some() && cmd.get_short() == s {
+                None
+            } else {
+                s
+            };
+            let l = if l.is_some() && cmd.get_long() == l {
+                None
+            } else {
+                l
+            };
+            (s, l)
+        });
+        if s.is_none() && l.is_none() {
+            return (cmd, false);
+        }
+
+        let mut arg = arg();
+        if let Some(s) = s {
+            arg = arg.short(s);
+        }
+        if let Some(l) = l {
+            arg = arg.long(l)
+        }
+        (cmd.arg(arg), true)
+    }
+
     /// Handles internal [`base::log`] configuration.
     pub mod logger {
         pub const LOGGER_KEY: &str = "LOGGER_KEY";
+        pub const LOGGER_KEY_LONG: &str = "log";
         pub const LOGGER_KEY_DEFAULT: &str = "warn";
         pub const LOGGER_KEY_DEFAULT_VAL: base::log::LevelFilter = base::log::LevelFilter::Warn;
 
         /// Adds internal log flag.
-        pub fn add(app: clap::Command<'static>) -> clap::Command<'static> {
-            let possible_values = [
-                clap::PossibleValue::new("warn"),
-                clap::PossibleValue::new("info"),
-                clap::PossibleValue::new("debug"),
-                clap::PossibleValue::new("trace"),
-            ];
-            app.arg(
+        pub fn add(cmd: clap::Command<'static>) -> clap::Command<'static> {
+            let arg = || {
+                let possible_values = [
+                    clap::PossibleValue::new("warn"),
+                    clap::PossibleValue::new("info"),
+                    clap::PossibleValue::new("debug"),
+                    clap::PossibleValue::new("trace"),
+                ];
                 clap::Arg::new(LOGGER_KEY)
-                    .long("log")
                     .value_name("LOG_LEVEL")
                     .default_value(LOGGER_KEY_DEFAULT)
                     .value_parser(possible_values)
-                    .help("Makes the internal logger more verbose, mostly for debugging."),
-            )
+                    .help("Makes the internal logger more verbose, mostly for debugging.")
+            };
+            super::if_flags_free_add(cmd, arg, None, Some(LOGGER_KEY_LONG)).0
         }
 
         fn of_value(val: impl AsRef<str>) -> base::log::LevelFilter {
@@ -121,17 +155,70 @@ pub mod utils {
         }
     }
 
+    /// Handles user info verbosity.
+    pub mod verb {
+        pub const VERB_KEY: &str = "VERB_KEY";
+        pub const VERB_KEY_SHORT: char = 'v';
+        pub const QUIET_KEY: &str = "QUIET_KEY";
+        pub const QUIET_KEY_SHORT: char = 'q';
+
+        /// Adds internal flags.
+        pub fn add(cmd: clap::Command<'static>) -> clap::Command<'static> {
+            {
+                let v = Some(VERB_KEY_SHORT);
+                let q = Some(QUIET_KEY_SHORT);
+                let dont_add = |arg: &clap::Arg| {
+                    let s = arg.get_short();
+                    s == v || s == q
+                };
+                if cmd.get_arguments().any(dont_add) {
+                    return cmd;
+                }
+            }
+            cmd.args([
+                clap::Arg::new(VERB_KEY)
+                    .short('v')
+                    .action(clap::ArgAction::Count)
+                    .help("Output more information such as statistics."),
+                clap::Arg::new(QUIET_KEY)
+                    .short('q')
+                    .action(clap::ArgAction::Count)
+                    .help("Output less information such as statistics."),
+            ])
+        }
+
+        /// Extracts the number of *verb* and *quiet* flags.
+        pub fn of_matches(matches: &clap::ArgMatches) -> (usize, usize) {
+            let v = matches.get_count(VERB_KEY);
+            let q = matches.get_count(QUIET_KEY);
+            (v as usize, q as usize)
+        }
+    }
+
     /// Add arguments and check matches for subcommands.
     pub mod sub_cmd {
         prelude!();
 
-        pub fn augment(cmd: clap::Command<'static>) -> clap::Command<'static> {
-            super::logger::add(cmd)
+        pub fn augment(mut cmd: clap::Command<'static>) -> clap::Command<'static> {
+            cmd = super::logger::add(cmd);
+            cmd = super::verb::add(cmd);
+            cmd
         }
 
         pub fn check_matches(matches: &clap::ArgMatches) -> Res<()> {
             if let Some(level) = super::logger::try_explicit_of_matches(matches) {
                 conf::top_cla::set_log_level(level).context("during CLAP")?
+            }
+            let (v, q) = super::verb::of_matches(matches);
+            if v != 0 || q != 0 {
+                conf::top_cla::verb_level_do(|mut level| {
+                    level = level + v;
+                    if q > level {
+                        0
+                    } else {
+                        level - q
+                    }
+                })?
             }
             Ok(())
         }
@@ -246,6 +333,15 @@ pub mod top {
     /// Performs top-level CLAP and returns the matches.
     pub fn init_from_matches(matches: &clap::ArgMatches) -> Res<()> {
         let log_level = super::utils::logger::of_matches(matches);
+        let verb_level = {
+            let (v, q) = super::utils::verb::of_matches(matches);
+            let level = 1 + v;
+            if q > level {
+                0
+            } else {
+                level - q
+            }
+        };
         let color = {
             let from_user = {
                 use clap::ValueSource::*;
@@ -275,6 +371,7 @@ pub mod top {
             portable,
             color,
             log_level,
+            verb_level,
             project_path,
         }
         .init()?;
