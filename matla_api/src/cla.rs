@@ -138,6 +138,9 @@ pub mod utils {
             matches: &clap::ArgMatches,
         ) -> Option<base::log::LevelFilter> {
             use clap::ValueSource;
+            if matches.try_contains_id(LOGGER_KEY).is_err() {
+                return None;
+            }
             match matches.value_source(LOGGER_KEY) {
                 Some(ValueSource::CommandLine | ValueSource::EnvVariable) => {
                     matches.get_one::<String>(LOGGER_KEY).map(of_value)
@@ -146,8 +149,11 @@ pub mod utils {
             }
         }
 
-        /// Extracts the internal log setting from the log flag value.
-        pub fn of_matches(matches: &clap::ArgMatches) -> base::log::LevelFilter {
+        /// Extracts the internal log setting from the **top-level** log flag value.
+        ///
+        /// Unlike [`try_explicit_of_matches`], this function does not check that the `LOGGER_KEY`
+        /// is an actual argument id. Should only be used on the top-level matches.
+        pub fn of_top_matches(matches: &clap::ArgMatches) -> base::log::LevelFilter {
             let val = matches
                 .get_one::<String>(LOGGER_KEY)
                 .expect("arguments with default value always have a value");
@@ -189,8 +195,16 @@ pub mod utils {
 
         /// Extracts the number of *verb* and *quiet* flags.
         pub fn of_matches(matches: &clap::ArgMatches) -> (usize, usize) {
-            let v = matches.get_count(VERB_KEY);
-            let q = matches.get_count(QUIET_KEY);
+            let v = if matches.try_contains_id(VERB_KEY).is_ok() {
+                matches.get_count(VERB_KEY)
+            } else {
+                0
+            };
+            let q = if matches.try_contains_id(QUIET_KEY).is_ok() {
+                matches.get_count(QUIET_KEY)
+            } else {
+                0
+            };
             (v as usize, q as usize)
         }
     }
@@ -332,7 +346,7 @@ pub mod top {
 
     /// Performs top-level CLAP and returns the matches.
     pub fn init_from_matches(matches: &clap::ArgMatches) -> Res<()> {
-        let log_level = super::utils::logger::of_matches(matches);
+        let log_level = super::utils::logger::of_top_matches(matches);
         let verb_level = {
             let (v, q) = super::utils::verb::of_matches(matches);
             let level = 1 + v;

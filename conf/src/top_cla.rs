@@ -67,6 +67,64 @@ impl TopCla {
     }
 }
 
+/// Explains what the `verb_level` configuration item does.
+pub const VERB_LEVEL_DESC: &str = "\
+Levels are cumulative:
+- `0`: final result only;
+- `1`: *absolute* state statistics, *i.e.* initial state count and final state count;
+- `2`: time statistics;
+- `3`: (virtually) all TLC statistics.
+";
+
+lazy_static! {
+    /// Lazy-static for `verb_level`.
+    ///
+    /// This can be accessed often in practice, having a lazy-static avoids going through the
+    /// [`sync::RwLock`] each time.
+    pub static ref VERB_LEVEL: usize = try_read(|top| top.verb_level)
+        .expect("[fatal] trying to access `VERB_LEVEL` before it is set");
+}
+
+/// A `println` conditionned by a verb level.
+#[macro_export]
+macro_rules! vlog {
+    (do(result) | $($action:tt)*) => {
+        $crate::vlog!( 0, $($action)* )
+    };
+    (do(state stats) | $($action:tt)*) => {
+        $crate::vlog!( 1, $($action)* )
+    };
+    (do(time stats) | $($action:tt)*) => {
+        $crate::vlog!( 2, $($action)* )
+    };
+    (do(stats) | $($action:tt)*) => {
+        $crate::vlog!( 3, $($action)* )
+    };
+
+    ( do($lvl:expr) $($action:tt)* ) => {
+        if $lvl == 0 || *$crate::top_cla::VERB_LEVEL >= $lvl {
+            $($action)*
+        }
+    };
+
+    (result | $($interp_str:tt)*) => {
+        $crate::vlog!( 0, $($interp_str)* )
+    };
+    (state stats | $($interp_str:tt)*) => {
+        $crate::vlog!( 1, $($interp_str)* )
+    };
+    (time stats | $($interp_str:tt)*) => {
+        $crate::vlog!( 2, $($interp_str)* )
+    };
+    (stats | $($interp_str:tt)*) => {
+        $crate::vlog!( 3, $($interp_str)* )
+    };
+
+    ( $lvl:expr, $($interp_str:tt)+ ) => {
+        $crate::vlog!( do($lvl) println!($($interp_str)*) )
+    };
+}
+
 /// Accesses the top-level CLAP info verbosity argument.
 pub fn verb_level() -> Res<usize> {
     try_read(|top| top.verb_level)

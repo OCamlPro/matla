@@ -381,27 +381,33 @@ impl Run {
         use ConciseOutcome as Out;
         match concise {
             Out::Success => {
-                println!("specification is {}", style.good.paint("safe"));
+                vlog!(result | "specification is {}", style.good.paint("safe"));
             }
             Out::Unsafe => {
-                println!("specification is {}", style.fatal.paint("unsafe"));
+                vlog!(result | "specification is {}", style.fatal.paint("unsafe"));
             }
             Out::IllDefined => {
-                println!("specification is {}", style.bad.paint("ill-defined"),);
+                vlog!(
+                    result | "specification is {}",
+                    style.bad.paint("ill-defined"),
+                );
             }
             Out::Error(None) => {
-                println!("specification caused an {}", style.fatal.paint("error"));
+                vlog!(
+                    result | "specification caused an {}",
+                    style.fatal.paint("error")
+                );
             }
             Out::Error(Some(msg)) => {
-                println!(
-                    "specification caused an {}: {}",
+                vlog!(
+                    result | "specification caused an {}: {}",
                     style.fatal.paint("error"),
                     style.bad.paint(msg)
                 );
             }
             Out::AssertFailed => {
-                println!(
-                    "specification {}",
+                vlog!(
+                    result | "specification {}",
                     style.fatal.paint("failed on an assertion")
                 );
             }

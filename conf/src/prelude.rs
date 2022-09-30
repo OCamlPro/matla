@@ -10,7 +10,7 @@ pub use crate::{
     target::{self, Target},
     toolchain::{self, Toolchain},
     top_cla::{self, TopCla},
-    Conf, TlcCla,
+    vlog, Conf, TlcCla,
 };
 
 pub(crate) use crate::glob;

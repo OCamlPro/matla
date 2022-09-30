@@ -27,7 +27,7 @@ pub mod prelude {
 
     pub use base::*;
     pub use cex;
-    pub use conf;
+    pub use conf::{self, vlog};
     pub use project::{self, tlc::outcome::*};
     pub use testing;
 
