@@ -13,8 +13,6 @@ pub mod cla {
     const RELEASE_KEY: &str = "RUN_RELEASE_KEY";
     /// Key for the module to run.
     const MAIN_MODULE_KEY: &str = "RUN_MAIN_MODULE_KEY";
-    /// Key for TLC-level verbosity.
-    const TLC_VERB_KEY: &str = "RUN_TLC_VERB_KEY";
     /// Key for showing configuration before running.
     pub const SHOW_CONFIG_KEY: &str = "RUN_SHOW_CONFIG_KEY";
 
@@ -151,15 +149,9 @@ pub mod cla {
     pub fn subcommand() -> clap::Command<'static> {
         let cmd = clap::Command::new(CMD_NAME)
             .about("Runs TLC on a TLA module in a project directory.")
-            .args(&[
-                clap::Arg::new(TLC_VERB_KEY)
-                    .short('v')
-                    .multiple_occurrences(true)
-                    .help("Increases TLC output verbosity, capped at 3"),
-                clap::Arg::new(SHOW_CONFIG_KEY)
-                    .help("Displays the options that matla will use to run TLC")
-                    .long("show_tlc_config"),
-            ]);
+            .args(&[clap::Arg::new(SHOW_CONFIG_KEY)
+                .help("Displays the options that matla will use to run TLC")
+                .long("show_tlc_config")]);
         tlc_args(cmd)
     }
 
@@ -246,18 +238,11 @@ pub mod cla {
     /// Constructs a [`Run`] if setup subcommand is active.
     pub fn check_matches(matches: &clap::ArgMatches) -> Option<Res<mode::run::Run>> {
         matches.subcommand_matches(CMD_NAME).map(|matches| {
-            let tlc_log_level = match matches.occurrences_of(cla::TLC_VERB_KEY) {
-                0 => log::LevelFilter::Warn,
-                1 => log::LevelFilter::Info,
-                2 => log::LevelFilter::Debug,
-                _ => log::LevelFilter::Trace,
-            };
-
             let show_config = matches.is_present(SHOW_CONFIG_KEY);
 
             let (tlc_cla, main_module, release) = handle_tlc_args(matches);
 
-            mode::run::Run::new(tlc_log_level, release, main_module, tlc_cla, show_config)
+            mode::run::Run::new(release, main_module, tlc_cla, show_config)
         })
     }
 }
@@ -266,8 +251,8 @@ pub mod cla {
 #[readonly]
 #[derive(Debug, Clone)]
 pub struct Run {
-    /// TLC output log level.
-    pub tlc_log_level: log::LevelFilter,
+    // /// TLC output log level.
+    // pub tlc_log_level: log::LevelFilter,
     /// Target configuration.
     pub target: conf::Target,
     /// Main module: the module to run.
@@ -284,7 +269,7 @@ impl Run {
     ///
     /// Fails if `project_path` does not exist or is not a directory.
     pub fn new(
-        tlc_log_level: log::LevelFilter,
+        // tlc_log_level: log::LevelFilter,
         release: bool,
         main_module: Option<String>,
         tlc_cla: conf::customl::TlcCla,
@@ -292,7 +277,7 @@ impl Run {
     ) -> Res<Self> {
         let target = conf::Target::new_run(conf::top_cla::project_path()?, release);
         Ok(Self {
-            tlc_log_level,
+            // tlc_log_level,
             target,
             main_module,
             error_count: 0,
@@ -362,7 +347,7 @@ impl Run {
         }
 
         log::info!("starting run on `{}`", project.actual_entry);
-        let mut output_handler = TlcOutputHandler::new(self.tlc_log_level, &project);
+        let mut output_handler = TlcOutputHandler::new(log::LevelFilter::Warn, &project);
         let tlc = project
             .run_tlc_async(&mut output_handler)
             .with_context(|| {
@@ -423,6 +408,7 @@ impl Run {
 #[derive(Debug, Clone)]
 pub struct TlcOutputHandler<'a> {
     tlc_log_level: Option<log::Level>,
+    start_instant: time::Instant,
     last_progress_update: time::Instant,
     progress_update_time_delta: time::Duration,
     style: conf::Styles,
@@ -440,6 +426,7 @@ impl<'a> TlcOutputHandler<'a> {
     pub fn new(tlc_log_level: log::LevelFilter, project: &'a project::FullProject) -> Self {
         Self {
             tlc_log_level: tlc_log_level.to_level(),
+            start_instant: time::Instant::now(),
             last_progress_update: time::Instant::now(),
             progress_update_time_delta: time::Duration::from_secs(1),
             style: conf::Styles::new(),
@@ -453,6 +440,139 @@ impl<'a> TlcOutputHandler<'a> {
         self.tlc_log_level.map(|l| level <= l).unwrap_or(false)
     }
 }
+
+mod msg_handling {
+    use super::*;
+
+    use project::tlc::code;
+
+    impl<'a> TlcOutputHandler<'a> {
+        /// Handles a [`code::Tlc`].
+        pub fn handle_msg_status(&mut self, msg: &code::Status) {
+            use code::Status;
+            match msg {
+                Status::TlcInitGenerated1 { state_count, .. } => {
+                    vlog!(state stats|
+                        "{}:\n  {}",
+                        self.style.uline.paint("distinct initial state(s)"),
+                        self.style.bold.paint(&state_count.1),
+                    )
+                }
+                Status::TlcFinished { runtime } => {
+                    vlog!(state stats|
+                        "\n{} in {}",
+                        self.style.uline.paint("done"),
+                        self.style.bold.paint(time::duration_fmt(*runtime))
+                    )
+                }
+                _ => (),
+            }
+        }
+
+        /// Handles a [`code::Tlc`].
+        pub fn handle_msg_tlc(&mut self, msg: &code::Tlc) {
+            use code::Tlc;
+
+            macro_rules! state_stats {
+                (
+                    // bool
+                    last: $is_last:expr,
+                    gene: ($gene:expr, $gene_spm:expr),
+                    dist: ($dist:expr, $dist_spm:expr),
+                    left: $left:expr $(,)?
+                ) => {
+                    let now = time::Instant::now();
+                    let actually_output =
+                        vlog!(if state stats { true } else { false })
+                        && (
+                            $is_last
+                            || now - self.last_progress_update >= self.progress_update_time_delta
+                        );
+                    if actually_output {
+                        self.last_progress_update = now;
+                        use std::cmp::max;
+                        let (gene, dist, left) = (&$gene.1, &$dist.1, &$left.1);
+                        let (gene_spm, dist_spm): (&Option<(Int, String)>, &Option<(Int, String)>) =
+                            ($gene_spm, $dist_spm);
+                        let align = max(gene.len(), max(dist.len(), left.len()));
+                        let gene_spm = if let Some((_, gen)) = gene_spm {
+                            format!(", {} per minute", self.style.ita.paint(gen))
+                        } else {
+                            "".into()
+                        };
+                        let dist_spm = if let Some((_, dist)) = dist_spm {
+                            format!(", {} per minute", self.style.ita.paint(dist))
+                        } else {
+                            "".into()
+                        };
+                        let runtime = vlog!(
+                            if time stats {
+                                let runtime = time::Instant::now() - self.start_instant;
+                                format!("\n  runtime: {}", self.style.bold.paint(time::duration_fmt(runtime)))
+                            } else {
+                                "".into()
+                            }
+                        );
+                        let header = if $is_last {
+                            "final state stats"
+                        } else {
+                            "state stats"
+                        };
+                        vlog!(
+                            state stats
+                                | "{header}:{runtime}\n  \
+                                {gene:>align$} generated{gene_spm}\n  \
+                                {dist:>align$} {emph_dist}{dist_spm}\n  \
+                                {left:>align$} left on queue\
+                                ",
+                                header = self.style.uline.paint(header),
+                                gene = self.style.bold.paint(format!("{gene:>align$}")),
+                                dist = self.style.bold.paint(format!("{dist:>align$}")),
+                                emph_dist = self.style.good.paint("distinct"),
+                                left = self.style.bold.paint(format!("{left:>align$}")),
+                                align = align,
+                        )
+                    }
+                }
+            }
+
+            match msg {
+                Tlc::TlcSearchDepth { depth } => vlog!(
+                    state stats | "{}:\n  {}",
+                    self.style.uline.paint("search depth"),
+                    self.style.bold.paint(depth.to_string()),
+                ),
+                Tlc::TlcStats {
+                    generated,
+                    distinct,
+                    left,
+                } => {
+                    state_stats! {
+                        last: true,
+                        gene: (generated, &None),
+                        dist: (distinct, &None),
+                        left: left,
+                    }
+                }
+                Tlc::TlcProgressStats {
+                    generated,
+                    gen_spm,
+                    distinct,
+                    dist_spm,
+                    left,
+                } => {
+                    state_stats! {
+                        last: false,
+                        gene: (generated, gen_spm),
+                        dist: (distinct, dist_spm),
+                        left: left,
+                    }
+                }
+                _ => (),
+            }
+        }
+    }
+}
 impl<'a> project::tlc::Out for TlcOutputHandler<'a> {
     fn handle_outcome(&mut self, outcome: RunOutcome) {
         match outcome {
@@ -462,49 +582,49 @@ impl<'a> project::tlc::Out for TlcOutputHandler<'a> {
     }
     fn handle_message(&mut self, msg: &project::tlc::msg::Msg, log_level: log::Level) {
         // Special handling for progress updates.
-        if self.is_log_active(log::Level::Info) {
-            use project::tlc::code::*;
-            match msg.code.as_ref() {
-                Some(TopMsg::Msg(Msg::Tlc(TlcMsg::Msg(Tlc::TlcProgressStats {
-                    generated,
-                    gen_spm,
-                    distinct,
-                    dist_spm,
-                    left,
-                })))) => {
-                    let now = time::Instant::now();
-                    if self.last_progress_update - now >= self.progress_update_time_delta {
-                        println!(
-                            "generated {} states so far ({} distinct states)",
-                            pretty_usize(*generated),
-                            pretty_usize(*distinct),
-                        );
+        use project::tlc::code::*;
+        match msg.code.as_ref() {
+            Some(TopMsg::Msg(Msg::Tlc(TlcMsg::Msg(tlc_msg)))) => self.handle_msg_tlc(tlc_msg),
+            Some(TopMsg::Msg(Msg::Status(tlc_status))) => self.handle_msg_status(tlc_status),
+            // Some(TopMsg::Msg(Msg::Tlc(TlcMsg::Msg(Tlc::TlcProgressStats {
+            //     generated,
+            //     gen_spm,
+            //     distinct,
+            //     dist_spm,
+            //     left,
+            // })))) => {
+            //     let now = time::Instant::now();
+            //     if self.last_progress_update - now >= self.progress_update_time_delta {
+            //         println!(
+            //             "generated {} states so far ({} distinct states)",
+            //             pretty_usize(*generated),
+            //             pretty_usize(*distinct),
+            //         );
 
-                        // State-per-minute and states on queue update.
-                        if self.is_log_active(log::Level::Debug) {
-                            if gen_spm.is_some() || dist_spm.is_some() {
-                                print!("↪ ");
-                                let mut sep = "";
-                                if let Some(gen) = *gen_spm {
-                                    print!("{} state per minute", pretty_usize(gen));
-                                    sep = ", ";
-                                }
-                                if let Some(dist) = *dist_spm {
-                                    print!(
-                                        "{}{} distinct state per minute",
-                                        sep,
-                                        pretty_usize(dist),
-                                    );
-                                }
-                                println!();
-                            }
-                            println!("{} states left on queue", left);
-                        }
-                    }
-                    return;
-                }
-                Some(_) | None => (),
-            }
+            //         // State-per-minute and states on queue update.
+            //         if self.is_log_active(log::Level::Debug) {
+            //             if gen_spm.is_some() || dist_spm.is_some() {
+            //                 print!("↪ ");
+            //                 let mut sep = "";
+            //                 if let Some(gen) = *gen_spm {
+            //                     print!("{} state per minute", pretty_usize(gen));
+            //                     sep = ", ";
+            //                 }
+            //                 if let Some(dist) = *dist_spm {
+            //                     print!(
+            //                         "{}{} distinct state per minute",
+            //                         sep,
+            //                         pretty_usize(dist),
+            //                     );
+            //                 }
+            //                 println!();
+            //             }
+            //             println!("{} states left on queue", left);
+            //         }
+            //     }
+            //     return;
+            // }
+            Some(_) | None => (),
         }
         if self.is_log_active(log_level) {
             for line in msg.lines() {
@@ -578,8 +698,8 @@ mod cla_spec {
     const RELEASE_KEY: &str = "RUN_RELEASE_KEY";
     /// Key for the module to run.
     const MAIN_MODULE_KEY: &str = "RUN_MAIN_MODULE_KEY";
-    /// Key for TLC-level verbosity.
-    const TLC_VERB_KEY: &str = "RUN_TLC_VERB_KEY";
+    // /// Key for TLC-level verbosity.
+    // const TLC_VERB_KEY: &str = "RUN_TLC_VERB_KEY";
     /// Key for showing configuration before running.
     pub const SHOW_CONFIG_KEY: &str = "RUN_SHOW_CONFIG_KEY";
 
@@ -800,10 +920,10 @@ mod cla_spec {
             let cmd = cmd
                 .about("Runs TLC on a TLA module in a project directory.")
                 .args(&[
-                    clap::Arg::new(TLC_VERB_KEY)
-                        .short('v')
-                        .multiple_occurrences(true)
-                        .help("Increases TLC output verbosity, capped at 3"),
+                    // clap::Arg::new(TLC_VERB_KEY)
+                    //     .short('v')
+                    //     .multiple_occurrences(true)
+                    //     .help("Increases TLC output verbosity, capped at 3"),
                     clap::Arg::new(SHOW_CONFIG_KEY)
                         .help("Displays the options that matla will use to run TLC")
                         .long("show_tlc_config"),
@@ -811,18 +931,18 @@ mod cla_spec {
             tlc_args(cmd)
         }
         fn build(matches: &clap::ArgMatches) -> Res<Self> {
-            let tlc_log_level = match matches.occurrences_of(TLC_VERB_KEY) {
-                0 => log::LevelFilter::Warn,
-                1 => log::LevelFilter::Info,
-                2 => log::LevelFilter::Debug,
-                _ => log::LevelFilter::Trace,
-            };
+            // let tlc_log_level = match matches.occurrences_of(TLC_VERB_KEY) {
+            //     0 => log::LevelFilter::Warn,
+            //     1 => log::LevelFilter::Info,
+            //     2 => log::LevelFilter::Debug,
+            //     _ => log::LevelFilter::Trace,
+            // };
 
             let show_config = matches.is_present(SHOW_CONFIG_KEY);
 
             let (tlc_cla, main_module, release) = handle_tlc_args(matches);
 
-            Self::new(tlc_log_level, release, main_module, tlc_cla, show_config)
+            Self::new(release, main_module, tlc_cla, show_config)
         }
         fn run(self) -> Res<Option<i32>> {
             self.launch().map(Some)

@@ -573,9 +573,9 @@ code_enums! {
             TlcCheckpointRecoverStart = (2197, "[tlc msg] checkpoint recover start"),
             TlcCheckpointRecoverEnd = (2198, "[tlc msg] checkpoint recover end"),
             TlcStats = (2199, "[tlc msg] stats") {
-                generated: usize,
-                distinct: usize,
-                left: usize,
+                generated: (Int, String),
+                distinct: (Int, String),
+                left: (Int, String),
             } => |contents| {
                 let line = contents.get_1_plain_str()?;
                 tlc::parse::stats(line)
@@ -584,11 +584,11 @@ code_enums! {
             TlcStatsDfid = (2204, "[tlc msg] stats dfid"),
             TlcStatsSimu = (2210, "[tlc msg] stats simu"),
             TlcProgressStats = (2200, "[tlc msg] progress stats") {
-                generated: usize,
-                gen_spm: Option<usize>,
-                distinct: usize,
-                dist_spm: Option<usize>,
-                left: usize,
+                generated: (Int, String),
+                gen_spm: Option<(Int, String)>,
+                distinct: (Int, String),
+                dist_spm: Option<(Int, String)>,
+                left: (Int, String),
             } => |contents| {
                 let line = contents.get_1_plain_str()?;
                 tlc::parse::progress_stats(line)
@@ -704,7 +704,7 @@ code_enums! {
             TlcComputingInit = (2189, "[status] computing init"),
 
             TlcInitGenerated1 = (2190, "[status] init generated (1)") {
-                state_count: usize,
+                state_count: (Int, String),
                 end_time: chrono::NaiveDateTime,
             } => |contents| {
                 let line = contents.get_1_plain_str()?;

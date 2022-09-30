@@ -1,4 +1,4 @@
-> matla run top
+> matla run -q top
 # 10
 Error: an assertion failed with "b1 is not TRUE"
 

@@ -1,4 +1,4 @@
-> matla run top
+> matla run -q top
 # 20
 Error: parse error on file `./top.tla`
 - expected ==== or more Module body, encountered `<EOF>` and `TRUE`

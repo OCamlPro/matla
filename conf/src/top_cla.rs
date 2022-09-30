@@ -46,6 +46,16 @@ pub struct TopCla {
     pub project_path: io::PathBuf,
 }
 impl TopCla {
+    pub fn new(color: bool, portable: bool, project_path: impl Into<io::PathBuf>) -> Self {
+        Self {
+            color,
+            portable,
+            log_level: log::LevelFilter::Warn,
+            verb_level: 1,
+            project_path: project_path.into(),
+        }
+    }
+
     /// Sets the top-level CLAP values.
     pub fn init(self) -> Res<()> {
         let mut top = glob::TOP_CLAP
@@ -73,7 +83,8 @@ Levels are cumulative:
 - `0`: final result only;
 - `1`: *absolute* state statistics, *i.e.* initial state count and final state count;
 - `2`: time statistics;
-- `3`: (virtually) all TLC statistics.
+- `3`: (virtually) all TLC statistics;
+- `4`: almost all TLC info.
 ";
 
 lazy_static! {
@@ -88,23 +99,25 @@ lazy_static! {
 /// A `println` conditionned by a verb level.
 #[macro_export]
 macro_rules! vlog {
-    (do(result) | $($action:tt)*) => {
-        $crate::vlog!( 0, $($action)* )
+    (if result $($tail:tt)*) => {
+        $crate::vlog!( if (0) $($tail)* )
     };
-    (do(state stats) | $($action:tt)*) => {
-        $crate::vlog!( 1, $($action)* )
+    (if state stats $($tail:tt)*) => {
+        $crate::vlog!( if (1) $($tail)* )
     };
-    (do(time stats) | $($action:tt)*) => {
-        $crate::vlog!( 2, $($action)* )
+    (if time stats $($tail:tt)*) => {
+        $crate::vlog!( if (2) $($tail)* )
     };
-    (do(stats) | $($action:tt)*) => {
-        $crate::vlog!( 3, $($action)* )
+    (if stats $($tail:tt)*) => {
+        $crate::vlog!( if (3) $($tail)* )
+    };
+    (if max $($tail:tt)*) => {
+        $crate::vlog!( if (4) $($tail)* )
     };
 
-    ( do($lvl:expr) $($action:tt)* ) => {
-        if $lvl == 0 || *$crate::top_cla::VERB_LEVEL >= $lvl {
-            $($action)*
-        }
+    ( if ($lvl:expr) $thn:block $(else $els:block)?  ) => {
+        if $lvl == 0 || *$crate::top_cla::VERB_LEVEL >= $lvl
+        $thn $(else $els)?
     };
 
     (result | $($interp_str:tt)*) => {
@@ -119,9 +132,12 @@ macro_rules! vlog {
     (stats | $($interp_str:tt)*) => {
         $crate::vlog!( 3, $($interp_str)* )
     };
+    (max | $($interp_str:tt)*) => {
+        $crate::vlog!( 4, $($interp_str)* )
+    };
 
     ( $lvl:expr, $($interp_str:tt)+ ) => {
-        $crate::vlog!( do($lvl) println!($($interp_str)*) )
+        $crate::vlog!( if ($lvl) { println!($($interp_str)*) } )
     };
 }
 
@@ -131,6 +147,7 @@ pub fn verb_level() -> Res<usize> {
 }
 /// Sets the top-level CLAP verbosity argument.
 pub fn set_verb_level(verb: usize) -> Res<()> {
+    println!("setting verb level to {}", verb);
     try_write(|top| top.verb_level = verb)
 }
 /// Applies some action to the top-level CLAP verbosity argument.

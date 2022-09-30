@@ -1,4 +1,4 @@
-> matla run top
+> matla run -q top
 # 20
 Error: on file `./top.cfg`
 - The `.cfg` file provided does not specify an initial state predicate.

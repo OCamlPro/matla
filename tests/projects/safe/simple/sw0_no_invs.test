@@ -1,3 +1,3 @@
-> matla run top
+> matla run -q top
 # 0
 specification is safe

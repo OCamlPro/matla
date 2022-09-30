@@ -49,6 +49,22 @@ pub mod sync {
 pub mod time {
     pub use std::time::{Duration, Instant, SystemTime};
 
+    use crate::pretty_u64;
+
+    pub fn duration_fmt(d: std::time::Duration) -> String {
+        if let Ok(d) = chrono::Duration::from_std(d) {
+            chrono_duration_fmt(&d)
+        } else {
+            let mut s = format!("{}", pretty_u64(d.as_secs()));
+            match d.subsec_nanos() {
+                0 => (),
+                n => s = format!("{}.{:0>9}", s, n),
+            }
+            s.push_str(" seconds");
+            s
+        }
+    }
+
     pub fn chrono_duration_fmt(d: &chrono::Duration) -> String {
         let mut s = String::with_capacity(203);
 
@@ -102,6 +118,17 @@ pub mod msg {
 /// assert_eq!(pretty_usize(0), "0");
 /// ```
 pub fn pretty_usize(n: usize) -> String {
+    let mut s = n.to_string();
+    let mut pref = s.chars().count() % 3;
+
+    while s[pref..].len() > 3 {
+        s.insert(pref + 3, '_');
+        pref += 4;
+    }
+
+    s
+}
+pub fn pretty_u64(n: u64) -> String {
     let mut s = n.to_string();
     let mut pref = s.chars().count() % 3;
 

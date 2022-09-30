@@ -77,6 +77,33 @@ peg::parser! {
             }
         } / expected!("`usize` value")
 
+        /// Parses an integer with `,` delimiters (`10³` separators).
+        ///
+        /// TODO: test and fix.
+        pub rule pretty_int_string() -> (Int, String)
+        = quiet!{
+            num:$(num_char()+) tail:( "," sub:$(num_char()+) { sub } )* {?
+                if tail.is_empty() {
+                    Int::parse_bytes(num.as_bytes(), 10).ok_or_else(|| "illegal integer")
+                        .map(|res| (res, num.into()))
+                } else {
+                    let mut s = String::with_capacity(
+                        tail.iter().cloned().fold(num.len(), |acc, sub| acc + sub.len())
+                    );
+                    let mut res_s = s.clone();
+                    s.push_str(num);
+                    res_s.push_str(num);
+                    for sub in tail {
+                        s.push_str(sub);
+                        res_s.push(',');
+                        res_s.push_str(sub);
+                    }
+                    Int::parse_bytes(s.as_bytes(), 10).ok_or_else(|| "illegal integer")
+                        .map(|res| (res, res_s))
+                }
+            }
+        } / expected!("`usize` value")
+
         /// Parses a double-quoted string.
         ///
         /// TODO: de-escape characters, probably.
@@ -548,7 +575,7 @@ peg::parser! {
         /// Returns the number of initial states computed and the end date.
         pub rule init_generated_1() -> tlc::code::Status
         = _ "Finished" _ "computing" _ "initial" _ "states" _ ":"
-        _ state_count:pretty_usize()
+        _ state_count:pretty_int_string()
         _ "distinct" _ "state" ("s")? _ "generated" _ "at" _ end_time:date() _ "." _ {
             tlc::code::Status::TlcInitGenerated1 {
                 state_count, end_time
@@ -557,9 +584,9 @@ peg::parser! {
 
         /// Returns the number states generated and the number of distinct states / states left.
         pub rule stats() -> tlc::code::Tlc
-        = generated:pretty_usize() _ "state" ("s")? _ "generated" _ ","
-        _ distinct:pretty_usize() _ "distinct" _ "state" ("s")? _ "found" _ ","
-        _ left:pretty_usize() _ "state" ("s")? _ "left" _ "on" _ "queue" _ "." {
+        = generated:pretty_int_string() _ "state" ("s")? _ "generated" _ ","
+        _ distinct:pretty_int_string() _ "distinct" _ "state" ("s")? _ "found" _ ","
+        _ left:pretty_int_string() _ "state" ("s")? _ "left" _ "on" _ "queue" _ "." {
             tlc::code::Tlc::TlcStats {
                 generated,
                 distinct,
@@ -595,15 +622,15 @@ peg::parser! {
         /// Progress statistics.
         pub rule progress_stats() -> tlc::code::Tlc
         = "Progress" _ "(" _ what_is_this:pretty_usize() _ ")" _ "at" _ date:date() _ ":"
-        _ generated:pretty_usize() _ "states" _ "generated"
+        _ generated:pretty_int_string() _ "states" _ "generated"
         _ gen_spm:(
-            "(" _ gen_spm:pretty_usize() _ "s" _ "/" _ "min" _ ")" _ { gen_spm }
+            "(" _ gen_spm:pretty_int_string() _ "s" _ "/" _ "min" _ ")" _ { gen_spm }
         )? ","
-        _ distinct:pretty_usize() _ "distinct" _ "states" _ "found"
+        _ distinct:pretty_int_string() _ "distinct" _ "states" _ "found"
         _ dist_spm:(
-            "(" _ dist_spm:pretty_usize() _ "ds" _ "/" _ "min" _ ")" _ { dist_spm }
+            "(" _ dist_spm:pretty_int_string() _ "ds" _ "/" _ "min" _ ")" _ { dist_spm }
         )? ","
-        _ left:pretty_usize() _ "states" _ "left" _ "on" _ "queue" _ "." {
+        _ left:pretty_int_string() _ "states" _ "left" _ "on" _ "queue" _ "." {
             tlc::code::Tlc::TlcProgressStats {
                 generated,
                 gen_spm,

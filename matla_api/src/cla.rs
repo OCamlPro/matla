@@ -92,6 +92,54 @@ pub mod utils {
         (cmd.arg(arg), true)
     }
 
+    /// Handles teh color flag.
+    pub mod color {
+        prelude!();
+
+        /// CLAP key for color.
+        pub const COLOR_KEY: &str = "TOP_COLOR";
+        pub const COLOR_KEY_LONG: &str = "color";
+        pub const COLOR_KEY_SHORT: char = 'c';
+        /// CLAP key for color.
+        pub const COLOR_KEY_DEFAULT: &str = "on";
+
+        pub fn add(cmd: clap::Command<'static>) -> clap::Command<'static> {
+            let arg = || {
+                clap::Arg::new(COLOR_KEY)
+                    .short('c')
+                    .long("color")
+                    .help("(De)activates colored output.")
+                    .takes_value(true)
+                    .default_value(COLOR_KEY_DEFAULT)
+                    .value_name(super::BOOL_VALUES)
+                    .validator(|arg| super::validate_bool(&arg).map(|_| ()))
+            };
+            super::if_flags_free_add(cmd, arg, Some(COLOR_KEY_SHORT), Some(COLOR_KEY_LONG)).0
+        }
+
+        /// Extracts the internal log setting from the log flag value if explicitely provided.
+        ///
+        /// Produces `None` if no value was explicitely provided.
+        pub fn try_explicit_of_matches(matches: &clap::ArgMatches) -> Option<bool> {
+            use clap::ValueSource;
+            if matches.try_contains_id(COLOR_KEY).is_err() {
+                return None;
+            }
+            match matches.value_source(COLOR_KEY) {
+                Some(ValueSource::CommandLine | ValueSource::EnvVariable) => {
+                    let val = super::validate_bool(
+                        matches
+                            .value_of(COLOR_KEY)
+                            .expect("unreachable: CLA value with default"),
+                    )
+                    .expect("unreachable: validated CLA value");
+                    Some(val)
+                }
+                None | Some(ValueSource::DefaultValue) | Some(_) => None,
+            }
+        }
+    }
+
     /// Handles internal [`base::log`] configuration.
     pub mod logger {
         pub const LOGGER_KEY: &str = "LOGGER_KEY";
@@ -214,12 +262,16 @@ pub mod utils {
         prelude!();
 
         pub fn augment(mut cmd: clap::Command<'static>) -> clap::Command<'static> {
+            cmd = super::color::add(cmd);
             cmd = super::logger::add(cmd);
             cmd = super::verb::add(cmd);
             cmd
         }
 
         pub fn check_matches(matches: &clap::ArgMatches) -> Res<()> {
+            if let Some(color) = super::color::try_explicit_of_matches(matches) {
+                conf::top_cla::set_color(color)?
+            }
             if let Some(level) = super::logger::try_explicit_of_matches(matches) {
                 conf::top_cla::set_log_level(level).context("during CLAP")?
             }
@@ -252,10 +304,6 @@ pub mod top {
     pub const LOG_KEY: &str = "TOP_LOG";
     /// CLAP key for portability.
     pub const PORTABLE_KEY: &str = "TOP_PORTABLE";
-    /// CLAP key for color.
-    pub const COLOR_KEY: &str = "TOP_COLOR";
-    /// CLAP key for color.
-    pub const COLOR_KEY_DEFAULT: &str = "on";
     /// CLAP key for project path.
     pub const PATH_KEY: &str = "TOP_PROJECT_PATH";
     /// Default key for project path.
@@ -317,7 +365,7 @@ pub mod top {
 
     /// Top-level CLAP command.
     pub fn command(cmd: clap::Command<'static>) -> clap::Command<'static> {
-        let cmd = super::utils::logger::add(cmd);
+        let cmd = super::utils::sub_cmd::augment(cmd);
         let cmd = cmd.args(&[
             // clap::Arg::new(VERB_KEY)
             //     .short('v')
@@ -332,65 +380,21 @@ pub mod top {
                 .long("portable")
                 .help("Infer toolchain from environment, load no user configuration."),
             project_path_arg(),
-            clap::Arg::new(COLOR_KEY)
-                .short('c')
-                .long("color")
-                .help("(De)activates colored output.")
-                .takes_value(true)
-                .default_value(COLOR_KEY_DEFAULT)
-                .value_name(cla::utils::BOOL_VALUES)
-                .validator(|arg| cla::utils::validate_bool(&arg).map(|_| ())),
         ]);
         mode::Mode::add_all_subcommands(cmd)
     }
 
     /// Performs top-level CLAP and returns the matches.
     pub fn init_from_matches(matches: &clap::ArgMatches) -> Res<()> {
-        let log_level = super::utils::logger::of_top_matches(matches);
-        let verb_level = {
-            let (v, q) = super::utils::verb::of_matches(matches);
-            let level = 1 + v;
-            if q > level {
-                0
-            } else {
-                level - q
-            }
-        };
-        let color = {
-            let from_user = {
-                use clap::ValueSource::*;
-                match matches.value_source(cla::top::COLOR_KEY) {
-                    Some(EnvVariable) | Some(CommandLine) => true,
-                    Some(DefaultValue) | Some(_) | None => false,
-                }
-            };
-            let val = cla::utils::validate_bool(
-                matches
-                    .value_of(cla::top::COLOR_KEY)
-                    .expect("unreachable: CLA value with default"),
-            )
-            .expect("unreachable: validated CLA value");
-
-            if from_user {
-                val
-            } else {
-                val && atty::is(atty::Stream::Stdout)
-            }
-        };
         let portable = matches.is_present(cla::top::PORTABLE_KEY);
 
         let project_path: io::PathBuf = resolve_project_path(&matches);
+        // actual color argument handled by `sub_cmd::check_matches` below
+        let color = atty::is(atty::Stream::Stdout);
 
-        conf::TopCla {
-            portable,
-            color,
-            log_level,
-            verb_level,
-            project_path,
-        }
-        .init()?;
+        conf::TopCla::new(color, portable, project_path).init()?;
 
-        Ok(())
+        super::utils::sub_cmd::check_matches(matches)
     }
     pub fn init_from_str(cmd: clap::Command<'static>, clap: &'static str) -> Res<clap::ArgMatches> {
         let matches = command(cmd).get_matches_from(

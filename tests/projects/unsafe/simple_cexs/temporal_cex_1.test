@@ -1,4 +1,4 @@
-> matla run top
+> matla -q run top
 # 10
 Some temporal property(ies) do not hold.
 Counterexample:
