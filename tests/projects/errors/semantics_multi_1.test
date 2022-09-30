@@ -1,4 +1,4 @@
-> matla run top
+> matla run -q top
 # 20
 Error: multiple problems occurred during semantic processing
 - on file `./top.tla` (top, 10:21 → 10:24)

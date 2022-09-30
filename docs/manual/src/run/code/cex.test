@@ -1,4 +1,4 @@
-> matla run -w 1
+> matla run -q -w 1
 # 10
 Invariant cnt_leq_10 does not hold.
 Counterexample:

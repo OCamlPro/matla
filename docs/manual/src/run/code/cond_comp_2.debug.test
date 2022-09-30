@@ -1,4 +1,4 @@
-> matla run -w 1
+> matla run -q -w 1
 # 10
 Error: an assertion failed with "that's probably going to fail"
 

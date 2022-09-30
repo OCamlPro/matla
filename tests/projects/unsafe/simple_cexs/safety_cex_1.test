@@ -1,4 +1,4 @@
-> matla run -w 1 top
+> matla run -q -w 1 top
 # 10
 Invariant pos_leq_10 does not hold.
 Counterexample:
